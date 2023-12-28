@@ -1,2 +1,4 @@
 runs
 datasets
+*.venv
+user_secrets.py
