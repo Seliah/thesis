@@ -1,14 +1,13 @@
 from datetime import timedelta
-from pathlib import Path
 
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate, save
+from numpy import concatenate
 from scipy.sparse import lil_array
 
-from user_secrets import URL
-from util.image import draw_grid, draw_overlay
+import state
+from types_adeck.camera import Camera
 from util.time import seconds_since_midnight
 
 GRID_SIZE = (9, 16)
@@ -22,10 +21,8 @@ a = [
     [lil_array((9 * 16, timeframes), dtype=bool) for _j in range(70)] for _d in range(5)
 ]
 
-reference_frame = None
 
-
-def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int] = (9, 16)):
+def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera):
     # Get the dimensions of the image
     height, width = diff.shape
 
@@ -50,7 +47,7 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int] = (9, 16)):
 
             # Update the global matrix
             index = int(seconds_since_midnight() / INTERVAL)
-            a[4][69][y * grid_size[0] + x, index] = has_values
+            a[4][camera.number][y * grid_size[0] + x, index] = has_values
             # Update the boolean matrix
             boolean_matrix[y, x] = has_values
     return boolean_matrix
@@ -62,8 +59,9 @@ def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     return concatenate((top_row, bottom_row), axis=0)
 
 
-def capture_motion(capture: cv2.VideoCapture):
-    while capture.isOpened():
+def capture_motion(capture: cv2.VideoCapture, camera: Camera):
+    reference_frame = None
+    while capture.isOpened() and not state.terminating:
         success, frame = capture.read()
         if not success:
             break
@@ -88,26 +86,21 @@ def capture_motion(capture: cv2.VideoCapture):
         # Store the current frame as the reference frame
         reference_frame = gray_blurred
 
-        grid = draw_grid(frame.copy(), GRID_SIZE)
-        change_matrix = update_diff_matrix(threshold_diff, GRID_SIZE)
-        overlayed = draw_overlay(grid, change_matrix)
+        # grid = draw_grid(frame.copy(), GRID_SIZE)
+        change_matrix = update_diff_matrix(threshold_diff, GRID_SIZE, camera)
+        # overlayed = draw_overlay(grid, change_matrix)
 
-        # Display the results or perform other actions based on motion detection
-        merged = show_four(
-            frame,
-            cv2.cvtColor(gray_blurred, cv2.COLOR_GRAY2BGR),
-            cv2.cvtColor(frame_diff, cv2.COLOR_GRAY2BGR),
-            overlayed,
-        )
-        cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            with Path("motions.npy").open("wb") as f:
-                save(f, a)
-            break
+        # # Display the results or perform other actions based on motion detection
+        # merged = show_four(
+        #     frame,
+        #     cv2.cvtColor(gray_blurred, cv2.COLOR_GRAY2BGR),
+        #     cv2.cvtColor(frame_diff, cv2.COLOR_GRAY2BGR),
+        #     overlayed,
+        # )
+        # cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
+        # if cv2.waitKey(1) & 0xFF == ord("q"):
+        #     with Path("motions.npy").open("wb") as f:
+        #         save(f, a)
+        #     break
     capture.release()
     cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    capture = cv2.VideoCapture(URL)
-    merged = capture_motion(capture)
