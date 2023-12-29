@@ -4,7 +4,8 @@ from pathlib import Path
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate, save, zeros
+from numpy import concatenate, save
+from scipy.sparse import lil_array
 
 from user_secrets import URL
 from util.image import draw_grid, draw_overlay
@@ -19,7 +20,10 @@ INTERVAL = 1
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 timeframes = int(DAY_IN_SECONDS / INTERVAL)
 
-a = zeros((9, 16, timeframes), dtype=bool)
+# a = zeros((9, 16, timeframes), dtype=bool)
+a = [
+    [lil_array((9 * 16, timeframes), dtype=bool) for _j in range(70)] for _d in range(5)
+]
 
 reference_frame = None
 
@@ -51,7 +55,7 @@ def generate_boolean_matrix(image: MatLike, grid_size: tuple[int, int] = (9, 16)
             boolean_matrix[y, x] = has_values
             # Update the global matrix
             index = int(seconds_since_midnight() / INTERVAL)
-            a[y][x][index] = has_values
+            a[4][69][y * grid_size[0] + x, index] = has_values
     return boolean_matrix
 
 
