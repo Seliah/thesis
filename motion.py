@@ -1,12 +1,27 @@
+from datetime import timedelta
+from pathlib import Path
+
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate
+from numpy import concatenate, save, zeros
 
 from user_secrets import URL
 from util.image import draw_grid, draw_overlay
+from util.time import seconds_since_midnight
 
 cap = cv2.VideoCapture(URL)
+
+GRID_SIZE = (9, 16)
+"""How many rows and columns should exist to define the cells."""
+INTERVAL = 1
+
+DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
+timeframes = int(DAY_IN_SECONDS / INTERVAL)
+
+a = zeros((9, 16, timeframes), dtype=bool)
+
+reference_frame = None
 
 
 def generate_boolean_matrix(image: MatLike, grid_size: tuple[int, int] = (9, 16)):
@@ -21,27 +36,28 @@ def generate_boolean_matrix(image: MatLike, grid_size: tuple[int, int] = (9, 16)
     boolean_matrix = numpy.zeros(grid_size, dtype=bool)
 
     # Iterate over the cells in the grid
-    for i in range(grid_size[0]):
-        for j in range(grid_size[1]):
+    for y in range(grid_size[0]):
+        for x in range(grid_size[1]):
             # Extract the current cell from the image
             cell = image[
-                i * cell_height : (i + 1) * cell_height,
-                j * cell_width : (j + 1) * cell_width,
+                y * cell_height : (y + 1) * cell_height,
+                x * cell_width : (x + 1) * cell_width,
             ]
 
             # Check if the cell contains any non-zero values
             has_values = numpy.any(cell != 0)
 
             # Update the boolean matrix
-            boolean_matrix[i, j] = has_values
+            boolean_matrix[y, x] = has_values
+            # Update the global matrix
+            index = int(seconds_since_midnight() / INTERVAL)
+            a[y][x][index] = has_values
     return boolean_matrix
 
 
-reference_frame = None
-
 while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
+    success, frame = cap.read()
+    if not success:
         break
 
     # Convert the frame to grayscale
@@ -65,8 +81,8 @@ while cap.isOpened():
     reference_frame = gray_blurred
     # Iterate over the contours and perform further processing as needed
 
-    grid = draw_grid(frame.copy(), (9, 16))
-    change_matrix = generate_boolean_matrix(threshold_diff, (9, 16))
+    grid = draw_grid(frame.copy(), GRID_SIZE)
+    change_matrix = generate_boolean_matrix(threshold_diff, GRID_SIZE)
     overlayed = draw_overlay(grid, change_matrix)
 
     # Display the results or perform other actions based on motion detection
@@ -83,6 +99,8 @@ while cap.isOpened():
     merged = concatenate((top_row, bottom_row), axis=0)
     cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
     if cv2.waitKey(1) & 0xFF == ord("q"):
+        with Path("motions.npy").open("wb") as f:
+            save(f, a)
         break
 
 cap.release()
