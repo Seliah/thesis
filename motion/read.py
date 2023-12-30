@@ -11,12 +11,12 @@ from util.time import TIME_ZERO
 
 if __name__ == "__main__":
     with Path("motions.npy").open("rb") as f:
-        a = load(f, allow_pickle=True)
-        cams: list[lil_array] = a[4]
-        nonz = [cam for cam in cams if len(cam.nonzero()[1]) != 0]
-        print(len(nonz))
+        a = load(f, allow_pickle=True).item()
         start_time = perf_counter()
-        cam: lil_array = a[4][69]
+        cams: dict[str, lil_array] = a["day4"]
+        nonz = [cam for cam in cams.values() if len(cam.nonzero()[1]) != 0]
+        print(len(nonz))
+        cam: lil_array = a["day4"]["cam69"]
         cells = [cam.getrow(cell_index) for cell_index in range(cam.shape[0])]
         merged = reduce(add, cells)
         for index in merged.nonzero()[1]:

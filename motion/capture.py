@@ -17,9 +17,12 @@ INTERVAL = 1
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 timeframes = int(DAY_IN_SECONDS / INTERVAL)
 
-a = [
-    [lil_array((9 * 16, timeframes), dtype=bool) for _j in range(70)] for _d in range(5)
-]
+a = {
+    f"day{day}": {
+        f"cam{cam}": lil_array((9 * 16, timeframes), dtype=bool) for cam in range(70)
+    }
+    for day in range(5)
+}
 
 
 def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera):
@@ -47,7 +50,7 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera
 
             # Update the global matrix
             index = int(seconds_since_midnight() / INTERVAL)
-            a[4][camera.number][y * grid_size[0] + x, index] = has_values
+            a["day4"]["cam69"][y * grid_size[0] + x, index] = has_values
             # Update the boolean matrix
             boolean_matrix[y, x] = has_values
     return boolean_matrix
