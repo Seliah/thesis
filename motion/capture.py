@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import cv2
 import numpy
@@ -48,7 +48,7 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera
             index_cell = y * grid_size[0] + x
             index_time = int(seconds_since_midnight() / INTERVAL)
 
-            id_day = "day4"
+            id_day = str(datetime.now().date())
             if id_day not in motions:
                 motions[id_day] = {}
             day = motions[id_day]
