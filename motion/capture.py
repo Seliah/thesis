@@ -12,17 +12,13 @@ from util.time import seconds_since_midnight
 
 GRID_SIZE = (9, 16)
 """How many rows and columns should exist to define the cells."""
+CELLS = GRID_SIZE[0] * GRID_SIZE[1]
 INTERVAL = 1
 
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 timeframes = int(DAY_IN_SECONDS / INTERVAL)
 
-a = {
-    f"day{day}": {
-        f"cam{cam}": lil_array((9 * 16, timeframes), dtype=bool) for cam in range(70)
-    }
-    for day in range(5)
-}
+motions: dict[str, dict[str, lil_array]] = {}
 
 
 def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera):
@@ -49,8 +45,20 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera
             has_values = numpy.any(cell != 0)
 
             # Update the global matrix
-            index = int(seconds_since_midnight() / INTERVAL)
-            a["day4"]["cam69"][y * grid_size[0] + x, index] = has_values
+            index_cell = y * grid_size[0] + x
+            index_time = int(seconds_since_midnight() / INTERVAL)
+
+            id_day = "day4"
+            if id_day not in motions:
+                motions[id_day] = {}
+            day = motions[id_day]
+
+            id_cam = camera.uuid
+            if id_cam not in day:
+                day[id_cam] = lil_array((CELLS, timeframes), dtype=bool)
+            camera_motions = day[id_cam]
+
+            camera_motions[index_cell, index_time] = has_values
             # Update the boolean matrix
             boolean_matrix[y, x] = has_values
     return boolean_matrix

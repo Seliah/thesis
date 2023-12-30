@@ -14,9 +14,13 @@ if __name__ == "__main__":
         a = load(f, allow_pickle=True).item()
         start_time = perf_counter()
         cams: dict[str, lil_array] = a["day4"]
-        nonz = [cam for cam in cams.values() if len(cam.nonzero()[1]) != 0]
-        print(len(nonz))
-        cam: lil_array = a["day4"]["cam69"]
+        nonz = {
+            camera_id: cam
+            for camera_id, cam in cams.items()
+            if len(cam.nonzero()[1]) != 0
+        }
+        print(nonz.keys())
+        cam: lil_array = a["day4"]["48614000-8267-11b2-8080-2ca59c7596fc"]
         cells = [cam.getrow(cell_index) for cell_index in range(cam.shape[0])]
         merged = reduce(add, cells)
         for index in merged.nonzero()[1]:
