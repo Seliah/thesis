@@ -13,6 +13,7 @@ from motion.capture import a, capture_motion
 from types_adeck import parse_all
 from types_adeck.camera import Camera
 from user_secrets import C
+from util.input import prompt
 from util.tasks import create_task
 
 client = AsyncClient(verify=C, timeout=5)
@@ -54,12 +55,9 @@ async def _service_terminate(signal: Signals):
     state.terminating = True
 
 
-from util.input import prompt
-
-
 async def _main():
     # set_termination_handler(_service_terminate)
-    cameras = (await get_cameras())[5:15]
+    cameras = await get_cameras()
     with ThreadPoolExecutor(None, "Capture") as executor:
         tasks = [
             create_task(capture(camera, executor), camera.name, _logger)

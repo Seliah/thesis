@@ -66,8 +66,11 @@ def capture_motion(capture: cv2.VideoCapture, camera: Camera):
         if not success:
             break
 
+        # Get UMat from Matlike to use GPU in following calulcations via OpenCL
+        frame_umat = cv2.UMat(frame)
+
         # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame_umat, cv2.COLOR_BGR2GRAY)
 
         # Apply GaussianBlur to reduce noise and improve motion detection
         gray_blurred = cv2.GaussianBlur(gray, (21, 21), 0)
@@ -79,7 +82,6 @@ def capture_motion(capture: cv2.VideoCapture, camera: Camera):
 
         # Compute the absolute difference between the current frame and the reference frame
         frame_diff = cv2.absdiff(reference_frame, gray_blurred)
-
         # Apply a threshold to identify regions with significant differences
         _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
 
@@ -87,7 +89,7 @@ def capture_motion(capture: cv2.VideoCapture, camera: Camera):
         reference_frame = gray_blurred
 
         # grid = draw_grid(frame.copy(), GRID_SIZE)
-        change_matrix = update_diff_matrix(threshold_diff, GRID_SIZE, camera)
+        change_matrix = update_diff_matrix(threshold_diff.get(), GRID_SIZE, camera)
         # overlayed = draw_overlay(grid, change_matrix)
 
         # # Display the results or perform other actions based on motion detection
