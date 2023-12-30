@@ -9,7 +9,7 @@ from httpx import AsyncClient
 from numpy import save
 
 import state
-from motion.capture import a, capture_motion
+from motion.capture import capture_motion, motions
 from types_adeck import parse_all
 from types_adeck.camera import Camera
 from user_secrets import C
@@ -63,13 +63,14 @@ async def _main():
             create_task(capture(camera, executor), camera.name, _logger)
             for camera in cameras
         ]
+        _logger.info("Running")
         await prompt()
         _logger.info("Got input, exiting...")
         state.terminating = True
         await gather(*tasks)
         _logger.info("done")
         with Path("motions.npy").open("wb") as f:
-            save(f, a)
+            save(f, motions)
             _logger.info("Wrote file!")
 
 

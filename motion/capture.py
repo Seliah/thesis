@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
+from logging import getLogger
+from pathlib import Path
 
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate
+from numpy import concatenate, load
 from scipy.sparse import lil_array
 
 import state
@@ -18,7 +20,16 @@ INTERVAL = 1
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 timeframes = int(DAY_IN_SECONDS / INTERVAL)
 
-motions: dict[str, dict[str, lil_array]] = {}
+motions: dict[str, dict[str, lil_array]]
+
+_logger = getLogger(__name__)
+
+try:
+    with Path("motions.npy").open("rb") as f:
+        motions = load(f, allow_pickle=True).item()
+except FileNotFoundError:
+    _logger.info("No saved motion data was found, starting fresh.")
+    motions = {}
 
 
 def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera):

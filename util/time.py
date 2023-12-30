@@ -5,8 +5,14 @@ from datetime import datetime
 TIME_ZERO = datetime.min.time()
 
 
-def seconds_since_midnight():
+def get_date_floored(time: datetime):
+    return datetime.combine(time.date(), TIME_ZERO)
+
+
+def today():
+    return get_date_floored(datetime.now())
+
+
+def seconds_since_midnight(time: datetime = datetime.now()):
     """See https://stackoverflow.com/questions/15971308/get-seconds-since-midnight-in-python"""
-    now = datetime.now()
-    midnight = datetime.combine(now.date(), TIME_ZERO)
-    return int((now - midnight).seconds)
+    return int((time - get_date_floored(time)).seconds)
