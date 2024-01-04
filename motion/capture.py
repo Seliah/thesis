@@ -9,7 +9,7 @@ from numpy import concatenate, load
 from scipy.sparse import lil_array
 
 import state
-from types_adeck.camera import Camera
+from util.image import draw_grid, draw_overlay
 from util.time import seconds_since_midnight
 
 GRID_SIZE = (9, 16)
@@ -32,7 +32,7 @@ except FileNotFoundError:
     motions = {}
 
 
-def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera):
+def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera_id: str):
     # Get the dimensions of the image
     height, width = diff.shape
 
@@ -55,23 +55,24 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera: Camera
             # Check if the cell contains any non-zero values
             has_values = numpy.any(cell != 0)
 
-            # Update the global matrix
-            index_cell = y * grid_size[0] + x
-            index_time = int(seconds_since_midnight() / INTERVAL)
+            if has_values:
+                # Update the global matrix
+                index_cell = y * grid_size[0] + x
+                index_time = int(seconds_since_midnight(datetime.now()) / INTERVAL)
 
-            id_day = str(datetime.now().date())
-            if id_day not in motions:
-                motions[id_day] = {}
-            day = motions[id_day]
+                id_day = str(datetime.now().date())
+                if id_day not in motions:
+                    motions[id_day] = {}
+                day = motions[id_day]
 
-            id_cam = camera.uuid
-            if id_cam not in day:
-                day[id_cam] = lil_array((CELLS, timeframes), dtype=bool)
-            camera_motions = day[id_cam]
+                id_cam = camera_id
+                if id_cam not in day:
+                    day[id_cam] = lil_array((CELLS, timeframes), dtype=bool)
+                camera_motions = day[id_cam]
 
-            camera_motions[index_cell, index_time] = has_values
-            # Update the boolean matrix
-            boolean_matrix[y, x] = has_values
+                camera_motions[index_cell, index_time] = has_values
+                # Update the boolean matrix
+                boolean_matrix[y, x] = has_values
     return boolean_matrix
 
 
@@ -81,7 +82,7 @@ def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     return concatenate((top_row, bottom_row), axis=0)
 
 
-def capture_motion(capture: cv2.VideoCapture, camera: Camera):
+def capture_motion(capture: cv2.VideoCapture, camera_id: str, show: bool):
     reference_frame = None
     while capture.isOpened() and not state.terminating:
         success, frame = capture.read()
@@ -110,21 +111,19 @@ def capture_motion(capture: cv2.VideoCapture, camera: Camera):
         # Store the current frame as the reference frame
         reference_frame = gray_blurred
 
-        # grid = draw_grid(frame.copy(), GRID_SIZE)
-        change_matrix = update_diff_matrix(threshold_diff.get(), GRID_SIZE, camera)
-        # overlayed = draw_overlay(grid, change_matrix)
+        change_matrix = update_diff_matrix(threshold_diff.get(), GRID_SIZE, camera_id)
+        if show:
+            grid = draw_grid(frame.copy(), GRID_SIZE)
+            overlayed = draw_overlay(grid, change_matrix)
 
-        # # Display the results or perform other actions based on motion detection
-        # merged = show_four(
-        #     frame,
-        #     cv2.cvtColor(gray_blurred, cv2.COLOR_GRAY2BGR),
-        #     cv2.cvtColor(frame_diff, cv2.COLOR_GRAY2BGR),
-        #     overlayed,
-        # )
-        # cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
-        # if cv2.waitKey(1) & 0xFF == ord("q"):
-        #     with Path("motions.npy").open("wb") as f:
-        #         save(f, a)
-        #     break
+            # Display the results or perform other actions based on motion detection
+            merged = show_four(
+                frame,
+                cv2.cvtColor(gray_blurred.get(), cv2.COLOR_GRAY2BGR),
+                cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
+                overlayed,
+            )
+            cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
+            cv2.waitKey(1)
     capture.release()
     cv2.destroyAllWindows()
