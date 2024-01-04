@@ -1,10 +1,18 @@
-opencv-python
-scipy
-httpx
-pydantic
+# CLI
 typer[all]
 
-# HTTP API framework
+# Type definitions
+pydantic
+
+# Computer Vision algorithms
+opencv-python
+# Sparse arrays
+scipy
+
+# HTTP API
 fastapi
 # ASGI server for production
 uvicorn[standard]
+
+# HTTP Requests
+httpx

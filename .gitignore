@@ -1,7 +1,11 @@
-runs
-datasets
+# Python
 *.venv
 user_secrets.py
+
+# YOLO
+runs
+datasets
+weights
 
 # Automatically created ignores follow:
 
