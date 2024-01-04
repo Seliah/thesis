@@ -3,3 +3,8 @@ scipy
 httpx
 pydantic
 typer[all]
+
+# HTTP API framework
+fastapi
+# ASGI server for production
+uvicorn[standard]
