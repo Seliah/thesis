@@ -14,8 +14,8 @@ cell_height = frame_height / GRID_SIZE[1]
 @app.get("/motions")
 def get_motions(camera_id: str, x: int, y: int, width: int, height: int):
     cell_y = int(y / cell_height)
-    area_height = int(height / GRID_SIZE[0]) + 1
+    area_height = int(height / cell_height) + 1
     cell_x = int(x / cell_width)
-    area_width = int(width / GRID_SIZE[1]) + 1
+    area_width = int(width / cell_width) + 1
     motions = get_motions_in_area(camera_id, cell_x, cell_y, area_width, area_height)
-    return cell_width
+    return motions.nonzero()[1].tolist()

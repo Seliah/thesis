@@ -26,7 +26,7 @@ def print_motion_frames(camera_motions: lil_array):
 
 def get_motions_in_area(
     camera_id: str, cell_x: int, cell_y: int, cell_width: int, cell_height: int
-):
+) -> lil_array:
     motions = load_motions()
     day_id = str(datetime.now().date())
     camera_motions: lil_array = motions[day_id][camera_id]
@@ -41,13 +41,14 @@ def get_motions_in_area(
     ]
     indices = reduce(add, indices_rows)
     rows = [camera_motions.getrow(index) for index in indices]
-    merged = reduce(add, rows)
-    for index in merged.nonzero()[1]:
-        print(today() + timedelta(seconds=int(index)))
+    # rows = [camera_motions.getrow(index) for index in indices]
+    return reduce(add, rows)
 
 
 if __name__ == "__main__":
-    # get_motions_in_area("cam", 5, 3, 1, 1)
+    # motions = get_motions_in_area("cam", 5, 3, 1, 1)
+    # for index in motions.nonzero()[1]:
+    #     print(today() + timedelta(seconds=int(index)))
     motions = load_motions()
     start_time = perf_counter()
     day_id = str(datetime.now().date())
