@@ -1,3 +1,5 @@
+from asyncio import gather, get_event_loop
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from logging import getLogger
 from pathlib import Path
@@ -5,11 +7,13 @@ from pathlib import Path
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate, load
+from numpy import concatenate, load, save
 from scipy.sparse import lil_array
 
 import state
+from user_secrets import URL
 from util.image import draw_grid, draw_overlay
+from util.tasks import create_task
 from util.time import seconds_since_midnight
 
 GRID_SIZE = (9, 16)
@@ -21,6 +25,9 @@ DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 timeframes = int(DAY_IN_SECONDS / INTERVAL)
 
 motions: dict[str, dict[str, lil_array]]
+
+loop = get_event_loop()
+executor = ThreadPoolExecutor(None, "Capture")
 
 _logger = getLogger(__name__)
 
@@ -127,3 +134,31 @@ def capture_motion(capture: cv2.VideoCapture, camera_id: str, show: bool):
             cv2.waitKey(1)
     capture.release()
     cv2.destroyAllWindows()
+
+
+async def capture(source: str | int, camera_id: str, show: bool):
+    capture = cv2.VideoCapture(source)
+    await loop.run_in_executor(executor, capture_motion, capture, camera_id, show)
+
+
+async def main():
+    # set_termination_handler(_service_terminate)
+    tasks = [create_task(capture(URL, "cam", True), "cam", _logger)]
+    # tasks = [
+    #     create_task(
+    #         capture(
+    #             get_rtsp_url(camera),
+    #             camera.uuid,
+    #             camera.uuid == "48614000-8267-11b2-8080-2ca59c7596fc",
+    #         ),
+    #         camera.name,
+    #         _logger,
+    #     )
+    #     for camera in cameras
+    # ]
+    _logger.info("Running")
+    await gather(*tasks)
+    _logger.info("done")
+    with Path("motions.npy").open("wb") as f:
+        save(f, motions)
+        _logger.info("Wrote file!")

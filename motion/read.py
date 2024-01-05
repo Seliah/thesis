@@ -3,6 +3,7 @@ from functools import reduce
 from operator import add
 from pathlib import Path
 from time import perf_counter
+from typing import Any
 
 from numpy import load
 from scipy.sparse import lil_array
@@ -25,9 +26,13 @@ def print_motion_frames(camera_motions: lil_array):
 
 
 def get_motions_in_area(
-    camera_id: str, cell_x: int, cell_y: int, cell_width: int, cell_height: int
+    motions: Any,
+    camera_id: str,
+    cell_x: int,
+    cell_y: int,
+    cell_width: int,
+    cell_height: int,
 ) -> lil_array:
-    motions = load_motions()
     day_id = str(datetime.now().date())
     camera_motions: lil_array = motions[day_id][camera_id]
     indices_rows = [
