@@ -46,7 +46,7 @@ async def _main():
     state.terminating = True
     await gather(*tasks)
     _logger.info("done")
-    with Path("motions.npy").open("wb") as f:
+    with state.path_motions.open("wb") as f:
         save(f, motions)
         _logger.info("Wrote file!")
 

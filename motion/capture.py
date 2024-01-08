@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from asyncio import gather, get_event_loop
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from logging import getLogger
-from pathlib import Path
 
 import cv2
 import numpy
@@ -11,7 +12,6 @@ from numpy import concatenate, load, save
 from scipy.sparse import lil_array
 
 import state
-from user_secrets import URL
 from util.image import draw_grid, draw_overlay
 from util.tasks import create_task
 from util.time import seconds_since_midnight
@@ -32,10 +32,11 @@ executor = ThreadPoolExecutor(None, "Capture")
 _logger = getLogger(__name__)
 
 try:
-    with Path("motions.npy").open("rb") as f:
+    print(f"Loading motion data from {state.path_motions}.")
+    with state.path_motions.open("rb") as f:
         motions = load(f, allow_pickle=True).item()
 except FileNotFoundError:
-    _logger.info("No saved motion data was found, starting fresh.")
+    print("No saved motion data was found, starting fresh.")
     motions = {}
 
 
@@ -130,7 +131,7 @@ def capture_motion(capture: cv2.VideoCapture, camera_id: str, show: bool):
                 cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
                 overlayed,
             )
-            cv2.imshow("Motion Detection", cv2.resize(merged, (1920, 1080)))
+            cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
             cv2.waitKey(1)
     capture.release()
     cv2.destroyAllWindows()
@@ -141,24 +142,25 @@ async def capture(source: str | int, camera_id: str, show: bool):
     await loop.run_in_executor(executor, capture_motion, capture, camera_id, show)
 
 
-async def main():
-    # set_termination_handler(_service_terminate)
-    tasks = [create_task(capture(URL, "cam", True), "cam", _logger)]
-    # tasks = [
-    #     create_task(
-    #         capture(
-    #             get_rtsp_url(camera),
-    #             camera.uuid,
-    #             camera.uuid == "48614000-8267-11b2-8080-2ca59c7596fc",
-    #         ),
-    #         camera.name,
-    #         _logger,
-    #     )
-    #     for camera in cameras
-    # ]
-    _logger.info("Running")
+async def capture_sources(sources: dict[str, str], display: str | None = None):
+    """Run analysis for all given sources. Save results after termination.
+
+    :param sources: Dictionary that lists the sources as values.
+    The keys should be unique identifiers for thes URLs as the analysis results will be saved
+    with these keys as IDs.
+    :param display: ID for a specific source. When given, the corresponding analysis will be visualized.
+    """
+    tasks = [
+        create_task(
+            capture(source, source_id, source_id == display),
+            source_id,
+            _logger,
+        )
+        for source_id, source in sources.items()
+    ]
+    _logger.info("Analysis is running.")
     await gather(*tasks)
-    _logger.info("done")
-    with Path("motions.npy").open("wb") as f:
+    _logger.info("All analysis tasks terminated.")
+    with state.path_motions.open("wb") as f:
         save(f, motions)
-        _logger.info("Wrote file!")
+        _logger.info("Wrote analysis results to disk.")

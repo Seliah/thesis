@@ -7,6 +7,9 @@ runs
 datasets
 weights
 
+# Tests
+images
+
 # Automatically created ignores follow:
 
 # Created by https://www.toptal.com/developers/gitignore/api/python

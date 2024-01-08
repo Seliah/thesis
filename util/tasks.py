@@ -50,6 +50,6 @@ def create_task(
         loop = get_event_loop()
     task = loop.create_task(coroutine, name=name)
     task.add_done_callback(
-        lambda task: _task_done(task, logger, on_done, print_exceptions)
+        lambda task: _task_done(task, logger, on_done, print_exceptions),
     )
     return task

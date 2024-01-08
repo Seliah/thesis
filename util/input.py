@@ -2,16 +2,16 @@
 
 See https://stackoverflow.com/questions/35223896/listen-to-keypress-with-asyncio
 """
+from __future__ import annotations
 
 import sys
 from asyncio import AbstractEventLoop, Queue, ensure_future, get_event_loop
-from typing import Optional
 
 
 class _Prompt:
-    def __init__(self, loop: Optional[AbstractEventLoop] = None):
+    def __init__(self, loop: AbstractEventLoop | None = None):
         self.loop = loop or get_event_loop()
-        self.queue: "Queue[str]" = Queue()
+        self.queue: Queue[str] = Queue()
         self.loop.add_reader(sys.stdin, self.got_input)
 
     def got_input(self):

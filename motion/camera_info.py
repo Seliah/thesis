@@ -21,5 +21,6 @@ def get_rtsp_url(camera: Camera):
     # Add credentials to rtsp_url
     credentials = camera.credentials
     return rtsp_url.replace(
-        "rtsp://", f"rtsp://{credentials.username}:{credentials.password}@"
+        "rtsp://",
+        f"rtsp://{credentials.username}:{credentials.password}@",
     )
