@@ -1,64 +1,43 @@
-from asyncio import gather, get_event_loop
 from logging import DEBUG, basicConfig, getLogger
-from signal import Signals
+from typing import Optional
 
 import typer
-from numpy import save
+from typing_extensions import Annotated
 
 import state
-from motion.capture import motions
-from user_secrets import URL
+from motion.camera_info import get_cameras, get_rtsp_url
+from motion.capture import capture_sources
 from util.input import prompt
-from util.tasks import create_task
+from util.tasks import create_task, typer_async
 
 basicConfig(level=DEBUG)
 _logger = getLogger()
 
-loop = get_event_loop()
+app = typer.Typer()
 
 
-async def _service_terminate(signal: Signals):
-    _logger.info(
-        f'Received signal "{signal.name}" ({signal}). Service is shutting down.',
-    )
-    state.terminating = True
-
-
-async def _main():
-    # set_termination_handler(_service_terminate)
-    tasks = [create_task(capture(URL, "cam", True), "cam", _logger)]
-    # tasks = [
-    #     create_task(
-    #         capture(
-    #             get_rtsp_url(camera),
-    #             camera.uuid,
-    #             camera.uuid == "48614000-8267-11b2-8080-2ca59c7596fc",
-    #         ),
-    #         camera.name,
-    #         _logger,
-    #     )
-    #     for camera in cameras
-    # ]
+async def exit_on_input():
     _logger.info("Running")
     await prompt()
     _logger.info("Got input, exiting...")
     state.terminating = True
-    await gather(*tasks)
-    _logger.info("done")
-    with state.PATH_MOTIONS.open("wb") as f:
-        save(f, motions)
-        _logger.info("Wrote file!")
 
 
-def a():
-    loop.run_until_complete(_main())
+async def get_sources():
+    cameras = (await get_cameras())[5:10]
+    return {camera.uuid: get_rtsp_url(camera) for camera in cameras}
+
+
+@app.command()
+@typer_async
+async def all(
+    display: Annotated[Optional[str], typer.Argument(help="ID of a camera that is to be visualized.")] = None,
+):
+    sources = await get_sources()
+    task = create_task(capture_sources(sources, display), "Capture main task", _logger)
+    await exit_on_input()
+    await task
 
 
 if __name__ == "__main__":
-    # set_termination_handler(_service_terminate)
-    # run(_main())
-    typer.run(a)
-
-    # _logger.info("Service is running.")
-    # loop.run_forever()
-    # _logger.info("Service shut down successfully.")
+    app()

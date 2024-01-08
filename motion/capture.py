@@ -76,49 +76,50 @@ def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     return concatenate((top_row, bottom_row), axis=0)
 
 
+def analyze_diff(frame: cv2.UMat, reference_frame: cv2.UMat | None, camera_id: str, show: bool):
+    # Convert the frame to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Apply GaussianBlur to reduce noise and improve motion detection
+    gray_blurred = cv2.GaussianBlur(gray, (21, 21), 0)
+
+    # Store the first frame as the reference frame
+    if reference_frame is None:
+        return gray_blurred
+
+    # Compute the absolute difference between the current frame and the reference frame
+    frame_diff = cv2.absdiff(reference_frame, gray_blurred)
+    # Apply a threshold to identify regions with significant differences
+    _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
+
+    reference_frame = gray_blurred
+    change_matrix = update_diff_matrix(threshold_diff.get(), state.GRID_SIZE, camera_id)
+    if show:
+        grid = draw_grid(frame.get().copy(), state.GRID_SIZE)
+        overlayed = draw_overlay(grid, change_matrix)
+
+        # Display the results or perform other actions based on motion detection
+        merged = show_four(
+            frame.get(),
+            cv2.cvtColor(gray_blurred.get(), cv2.COLOR_GRAY2BGR),
+            cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
+            overlayed,
+        )
+        cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
+        cv2.waitKey(1)
+    # Return the current frame as the reference frame
+    return gray_blurred
+
+
 def capture_motion(capture: cv2.VideoCapture, camera_id: str, show: bool):
     reference_frame = None
     while capture.isOpened() and not state.terminating:
         success, frame = capture.read()
         if not success:
             break
-
         # Get UMat from Matlike to use GPU in following calulcations via OpenCL
         frame_umat = cv2.UMat(frame)
-
-        # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame_umat, cv2.COLOR_BGR2GRAY)
-
-        # Apply GaussianBlur to reduce noise and improve motion detection
-        gray_blurred = cv2.GaussianBlur(gray, (21, 21), 0)
-
-        # # Store the first frame as the reference frame
-        if reference_frame is None:
-            reference_frame = gray_blurred
-            continue
-
-        # Compute the absolute difference between the current frame and the reference frame
-        frame_diff = cv2.absdiff(reference_frame, gray_blurred)
-        # Apply a threshold to identify regions with significant differences
-        _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
-
-        # Store the current frame as the reference frame
-        reference_frame = gray_blurred
-
-        change_matrix = update_diff_matrix(threshold_diff.get(), state.GRID_SIZE, camera_id)
-        if show:
-            grid = draw_grid(frame.copy(), state.GRID_SIZE)
-            overlayed = draw_overlay(grid, change_matrix)
-
-            # Display the results or perform other actions based on motion detection
-            merged = show_four(
-                frame,
-                cv2.cvtColor(gray_blurred.get(), cv2.COLOR_GRAY2BGR),
-                cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
-                overlayed,
-            )
-            cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
-            cv2.waitKey(1)
+        reference_frame = analyze_diff(frame_umat, reference_frame, camera_id, show)
     capture.release()
     cv2.destroyAllWindows()
 

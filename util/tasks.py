@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import AbstractEventLoop, Task, get_event_loop
+from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Coroutine, TypeVar
 
 if TYPE_CHECKING:
@@ -10,6 +11,23 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 LOG_TASKS = True
+
+loop = get_event_loop()
+
+
+def typer_async(f):
+    """Run a function in the current event loop.
+
+    This can be used to use an async function as a typer command.
+
+    See https://github.com/tiangolo/typer/issues/85#issuecomment-1365871959
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        return loop.run_until_complete(f(*args, **kwargs))
+
+    return wrapper
 
 
 def _task_done(
