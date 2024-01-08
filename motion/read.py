@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from functools import reduce
+from logging import getLogger
 from operator import add
 from time import perf_counter
 from typing import Any
@@ -8,13 +9,19 @@ from numpy import load
 from scipy.sparse import lil_array
 
 import state
-from motion.capture import GRID_SIZE
 from util.time import today
+
+_logger = getLogger(__name__)
 
 
 def load_motions():
-    with state.path_motions.open("rb") as f:
-        return load(f, allow_pickle=True).item()
+    try:
+        _logger.debug(f"Loading motion data from {state.PATH_MOTIONS}.")
+        with state.PATH_MOTIONS.open("rb") as f:
+            return load(f, allow_pickle=True).item()
+    except FileNotFoundError:
+        _logger.info("No saved motion data was found, starting fresh.")
+        return {}
 
 
 def print_motion_frames(camera_motions: lil_array):
@@ -38,8 +45,8 @@ def get_motions_in_area(
     indices_rows = [
         [
             *range(
-                (cell_y + y) * GRID_SIZE[1] + cell_x,
-                (cell_y + y) * GRID_SIZE[1] + cell_x + cell_width,
+                (cell_y + y) * state.GRID_SIZE[1] + cell_x,
+                (cell_y + y) * state.GRID_SIZE[1] + cell_x + cell_width,
             ),
         ]
         for y in range(cell_height)

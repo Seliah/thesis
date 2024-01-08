@@ -1,6 +1,5 @@
 from asyncio import gather, get_event_loop
 from logging import DEBUG, basicConfig, getLogger
-from pathlib import Path
 from signal import Signals
 
 import typer
@@ -20,7 +19,7 @@ loop = get_event_loop()
 
 async def _service_terminate(signal: Signals):
     _logger.info(
-        f'Received signal "{signal.name}" ({signal}). Service is shutting down.'
+        f'Received signal "{signal.name}" ({signal}). Service is shutting down.',
     )
     state.terminating = True
 
@@ -46,7 +45,7 @@ async def _main():
     state.terminating = True
     await gather(*tasks)
     _logger.info("done")
-    with state.path_motions.open("wb") as f:
+    with state.PATH_MOTIONS.open("wb") as f:
         save(f, motions)
         _logger.info("Wrote file!")
 

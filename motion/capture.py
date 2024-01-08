@@ -8,36 +8,22 @@ from logging import getLogger
 import cv2
 import numpy
 from cv2.typing import MatLike
-from numpy import concatenate, load, save
+from numpy import concatenate, save
 from scipy.sparse import lil_array
 
 import state
+from motion.read import load_motions
 from util.image import draw_grid, draw_overlay
 from util.tasks import create_task
 from util.time import seconds_since_midnight
 
-GRID_SIZE = (9, 16)
-"""How many rows and columns should exist to define the cells."""
-CELLS = GRID_SIZE[0] * GRID_SIZE[1]
-INTERVAL = 1
-
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
-timeframes = int(DAY_IN_SECONDS / INTERVAL)
-
-motions: dict[str, dict[str, lil_array]]
+TIMEFRAMES = int(DAY_IN_SECONDS / state.INTERVAL)
 
 loop = get_event_loop()
 executor = ThreadPoolExecutor(None, "Capture")
 
 _logger = getLogger(__name__)
-
-try:
-    print(f"Loading motion data from {state.path_motions}.")
-    with state.path_motions.open("rb") as f:
-        motions = load(f, allow_pickle=True).item()
-except FileNotFoundError:
-    print("No saved motion data was found, starting fresh.")
-    motions = {}
 
 
 def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera_id: str):
@@ -66,16 +52,16 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera_id: str
             if has_values:
                 # Update the global matrix
                 index_cell = y * grid_size[0] + x
-                index_time = int(seconds_since_midnight(datetime.now()) / INTERVAL)
+                index_time = int(seconds_since_midnight(datetime.now()) / state.INTERVAL)
 
                 id_day = str(datetime.now().date())
-                if id_day not in motions:
-                    motions[id_day] = {}
-                day = motions[id_day]
+                if id_day not in state.motions:
+                    state.motions[id_day] = {}
+                day = state.motions[id_day]
 
                 id_cam = camera_id
                 if id_cam not in day:
-                    day[id_cam] = lil_array((CELLS, timeframes), dtype=bool)
+                    day[id_cam] = lil_array((state.CELLS, TIMEFRAMES), dtype=bool)
                 camera_motions = day[id_cam]
 
                 camera_motions[index_cell, index_time] = has_values
@@ -119,9 +105,9 @@ def capture_motion(capture: cv2.VideoCapture, camera_id: str, show: bool):
         # Store the current frame as the reference frame
         reference_frame = gray_blurred
 
-        change_matrix = update_diff_matrix(threshold_diff.get(), GRID_SIZE, camera_id)
+        change_matrix = update_diff_matrix(threshold_diff.get(), state.GRID_SIZE, camera_id)
         if show:
-            grid = draw_grid(frame.copy(), GRID_SIZE)
+            grid = draw_grid(frame.copy(), state.GRID_SIZE)
             overlayed = draw_overlay(grid, change_matrix)
 
             # Display the results or perform other actions based on motion detection
@@ -150,6 +136,7 @@ async def capture_sources(sources: dict[str, str], display: str | None = None):
     with these keys as IDs.
     :param display: ID for a specific source. When given, the corresponding analysis will be visualized.
     """
+    state.motions = load_motions()
     tasks = [
         create_task(
             capture(source, source_id, source_id == display),
@@ -161,6 +148,6 @@ async def capture_sources(sources: dict[str, str], display: str | None = None):
     _logger.info("Analysis is running.")
     await gather(*tasks)
     _logger.info("All analysis tasks terminated.")
-    with state.path_motions.open("wb") as f:
-        save(f, motions)
+    with state.PATH_MOTIONS.open("wb") as f:
+        save(f, state.motions)
         _logger.info("Wrote analysis results to disk.")

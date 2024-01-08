@@ -7,14 +7,14 @@ from fastapi import FastAPI
 
 import state
 from motion.camera_info import get_cameras, get_rtsp_url
-from motion.capture import GRID_SIZE, capture_sources, motions
+from motion.capture import capture_sources
 from motion.read import get_motions_in_area
 from util.tasks import create_task
 
 frame_width = 1280
 frame_height = 720
-cell_width = frame_width / GRID_SIZE[0]
-cell_height = frame_height / GRID_SIZE[1]
+cell_width = frame_width / state.GRID_SIZE[0]
+cell_height = frame_height / state.GRID_SIZE[1]
 
 
 basicConfig(level=DEBUG)
@@ -43,7 +43,7 @@ def get_motions(camera_id: str, x: int, y: int, width: int, height: int):
     cell_x = int(x / cell_width)
     area_width = int(width / cell_width) + 1
     merged = get_motions_in_area(
-        motions,
+        state.motions,
         camera_id,
         cell_x,
         cell_y,
