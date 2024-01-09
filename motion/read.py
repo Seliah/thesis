@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from datetime import datetime, timedelta
 from functools import reduce
-from logging import getLogger
+from logging import DEBUG, basicConfig, getLogger
 from operator import add
 from time import perf_counter
 from typing import Any
@@ -58,6 +60,7 @@ def get_motions_in_area(
 
 
 if __name__ == "__main__":
+    basicConfig(level=DEBUG)
     # motions = get_motions_in_area("cam", 5, 3, 1, 1)
     # for index in motions.nonzero()[1]:
     #     print(today() + timedelta(seconds=int(index)))
@@ -66,7 +69,6 @@ if __name__ == "__main__":
     day_id = str(datetime.now().date())
     cams: dict[str, lil_array] = motions[day_id]
     nonz = {camera_id: cam for camera_id, cam in cams.items() if len(cam.nonzero()[1]) != 0}
-
     for camera_id in nonz.keys():
         print(f"{camera_id}:")
         print_motion_frames(motions[day_id][camera_id])

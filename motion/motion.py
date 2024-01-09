@@ -18,7 +18,7 @@ DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 TIMEFRAMES = int(DAY_IN_SECONDS / state.INTERVAL)
 
 
-def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera_id: str):
+def get_changes(diff: MatLike, grid_size: tuple[int, int]):
     # Get the dimensions of the image
     height, width = diff.shape
 
@@ -37,29 +37,38 @@ def update_diff_matrix(diff: MatLike, grid_size: tuple[int, int], camera_id: str
                 y * cell_height : (y + 1) * cell_height,
                 x * cell_width : (x + 1) * cell_width,
             ]
-
             # Check if the cell contains any non-zero values
-            has_values = numpy.any(cell != 0)
-
-            if has_values:
-                # Update the global matrix
-                index_cell = y * grid_size[0] + x
-                index_time = int(seconds_since_midnight(datetime.now()) / state.INTERVAL)
-
-                id_day = str(datetime.now().date())
-                if id_day not in state.motions:
-                    state.motions[id_day] = {}
-                day = state.motions[id_day]
-
-                id_cam = camera_id
-                if id_cam not in day:
-                    day[id_cam] = lil_array((state.CELLS, TIMEFRAMES), dtype=bool)
-                camera_motions = day[id_cam]
-
-                camera_motions[index_cell, index_time] = has_values
+            if has_values := numpy.any(cell != 0):
                 # Update the boolean matrix
                 boolean_matrix[y, x] = has_values
     return boolean_matrix
+
+
+def update_global_matrix(
+    motions: dict[str, dict[str, lil_array]],
+    change_matrix: NDArray[Any],
+    grid_size: tuple[int, int],
+    camera_id: str,
+):
+    width = change_matrix.shape[1]
+    for index in change_matrix.nonzero()[1]:
+        x = index % width
+        y = int(index / width)
+        # Update the global matrix
+        index_cell = y * grid_size[0] + x
+        index_time = int(seconds_since_midnight(datetime.now()) / state.INTERVAL)
+
+        id_day = str(datetime.now().date())
+        if id_day not in motions:
+            motions[id_day] = {}
+        day = motions[id_day]
+
+        id_cam = camera_id
+        if id_cam not in day:
+            day[id_cam] = lil_array((state.CELLS, TIMEFRAMES), dtype=bool)
+        camera_motions = day[id_cam]
+
+        camera_motions[index_cell, index_time] = True
 
 
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
@@ -79,13 +88,13 @@ def prepare(frame: MatLike):
     return frame_umat, cv2.GaussianBlur(gray, (21, 21), 0)
 
 
-def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat, camera_id: str):
+def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat):
     # Compute the absolute difference between the current frame and the reference frame
     frame_diff = cv2.absdiff(reference_frame, frame)
     # Apply a threshold to identify regions with significant differences
     _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
 
-    change_matrix = update_diff_matrix(threshold_diff.get(), state.GRID_SIZE, camera_id)
+    change_matrix = get_changes(threshold_diff.get(), state.GRID_SIZE)
 
     # Return the current frame as the reference frame
     return original, frame, frame_diff, change_matrix

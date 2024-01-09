@@ -24,3 +24,7 @@ def get_rtsp_url(camera: Camera):
         "rtsp://",
         f"rtsp://{credentials.username}:{credentials.password}@",
     )
+
+
+async def get_sources():
+    return {camera.uuid: get_rtsp_url(camera) for camera in await get_cameras()}

@@ -5,7 +5,7 @@ import typer
 from typing_extensions import Annotated
 
 import state
-from motion.camera_info import get_cameras, get_rtsp_url
+from motion.camera_info import get_sources
 from motion.capture import analyze_sources
 from util.input import prompt
 from util.tasks import create_task, typer_async
@@ -22,10 +22,6 @@ async def exit_on_input():
     _logger.info("Got input, exiting...")
     state.terminating = True
     state.termination_event.set()
-
-
-async def get_sources():
-    return {camera.uuid: get_rtsp_url(camera) for camera in await get_cameras()}
 
 
 @app.command()
