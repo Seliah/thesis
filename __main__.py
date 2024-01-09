@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 
 import state
 from motion.camera_info import get_cameras, get_rtsp_url
-from motion.capture import capture_sources
+from motion.capture import analyze_sources
 from util.input import prompt
 from util.tasks import create_task, typer_async
 
@@ -24,8 +24,7 @@ async def exit_on_input():
 
 
 async def get_sources():
-    cameras = (await get_cameras())[5:10]
-    return {camera.uuid: get_rtsp_url(camera) for camera in cameras}
+    return {camera.uuid: get_rtsp_url(camera) for camera in await get_cameras()}
 
 
 @app.command()
@@ -34,7 +33,17 @@ async def all(
     display: Annotated[Optional[str], typer.Argument(help="ID of a camera that is to be visualized.")] = None,
 ):
     sources = await get_sources()
-    task = create_task(capture_sources(sources, display), "Capture main task", _logger)
+    task = create_task(analyze_sources(sources, display), "Capture main task", _logger)
+    await exit_on_input()
+    await task
+
+
+@app.command()
+@typer_async
+async def direct(
+    source: Annotated[str, typer.Argument(help="Video source. Can be a RTSP URL.")],
+):
+    task = create_task(analyze_sources({source: source}, source), "Capture main task", _logger)
     await exit_on_input()
     await task
 

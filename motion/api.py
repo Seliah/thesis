@@ -7,7 +7,7 @@ from fastapi import FastAPI
 
 import state
 from motion.camera_info import get_cameras, get_rtsp_url
-from motion.capture import capture_sources
+from motion.capture import analyze_sources
 from motion.read import get_motions_in_area
 from util.tasks import create_task
 
@@ -26,7 +26,7 @@ async def lifespan(_: FastAPI):
     _logger.info("Starting analysis.")
     cameras = (await get_cameras())[5:10]
     sources = {camera.uuid: get_rtsp_url(camera) for camera in cameras}
-    task = create_task(capture_sources(sources), "Capture main task", _logger)
+    task = create_task(analyze_sources(sources), "Capture main task", _logger)
     yield
     _logger.info("Terminating analysis.")
     state.terminating = True
