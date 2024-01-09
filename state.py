@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from multiprocessing import Manager
 from time import tzname
 
 from pytz import timezone
@@ -20,6 +21,9 @@ GRID_SIZE = (9, 16)
 """How many rows and columns should exist to define the cells."""
 CELLS = GRID_SIZE[0] * GRID_SIZE[1]
 INTERVAL = 1
+
+manager = Manager()
+termination_event = manager.Event()
 
 terminating = False
 """Flag to quit long running processes."""

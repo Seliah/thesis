@@ -21,6 +21,7 @@ async def exit_on_input():
     await prompt()
     _logger.info("Got input, exiting...")
     state.terminating = True
+    state.termination_event.set()
 
 
 async def get_sources():

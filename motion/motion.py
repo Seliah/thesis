@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Any
 
 import cv2
 import numpy
 from cv2.typing import MatLike
 from numpy import concatenate
+from numpy.typing import NDArray
 from scipy.sparse import lil_array
 
 import state
@@ -66,36 +68,39 @@ def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     return concatenate((top_row, bottom_row), axis=0)
 
 
-def analyze_diff(frame: cv2.UMat, reference_frame: cv2.UMat | None, camera_id: str, show: bool):
+def prepare(frame: MatLike):
+    # Get UMat from Matlike to use GPU in following calulcations via OpenCL
+    frame_umat = cv2.UMat(frame)
+
     # Convert the frame to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(frame_umat, cv2.COLOR_BGR2GRAY)
 
     # Apply GaussianBlur to reduce noise and improve motion detection
-    gray_blurred = cv2.GaussianBlur(gray, (21, 21), 0)
+    return frame_umat, cv2.GaussianBlur(gray, (21, 21), 0)
 
-    # Store the first frame as the reference frame
-    if reference_frame is None:
-        return gray_blurred, None
 
+def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat, camera_id: str):
     # Compute the absolute difference between the current frame and the reference frame
-    frame_diff = cv2.absdiff(reference_frame, gray_blurred)
+    frame_diff = cv2.absdiff(reference_frame, frame)
     # Apply a threshold to identify regions with significant differences
     _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
 
-    reference_frame = gray_blurred
     change_matrix = update_diff_matrix(threshold_diff.get(), state.GRID_SIZE, camera_id)
-    if show:
-        grid = draw_grid(frame.get().copy(), state.GRID_SIZE)
-        overlayed = draw_overlay(grid, change_matrix)
 
-        # Display the results or perform other actions based on motion detection
-        merged = show_four(
-            frame.get(),
-            cv2.cvtColor(gray_blurred.get(), cv2.COLOR_GRAY2BGR),
-            cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
-            overlayed,
-        )
-        cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
-        cv2.waitKey(1)
     # Return the current frame as the reference frame
-    return gray_blurred, change_matrix
+    return original, frame, frame_diff, change_matrix
+
+
+def display(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, change_matrix: NDArray[Any]):
+    grid = draw_grid(frame.get().copy(), state.GRID_SIZE)
+    overlayed = draw_overlay(grid, change_matrix)
+
+    # Display the results or perform other actions based on motion detection
+    merged = show_four(
+        frame.get(),
+        cv2.cvtColor(gray_blurred.get(), cv2.COLOR_GRAY2BGR),
+        cv2.cvtColor(frame_diff.get(), cv2.COLOR_GRAY2BGR),
+        overlayed,
+    )
+    cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
+    cv2.waitKey(1)

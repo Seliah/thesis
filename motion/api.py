@@ -30,6 +30,7 @@ async def lifespan(_: FastAPI):
     yield
     _logger.info("Terminating analysis.")
     state.terminating = True
+    state.termination_event.set()
     await task
 
 
