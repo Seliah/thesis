@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import signal
 from asyncio import gather, get_event_loop
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from logging import getLogger
@@ -45,6 +46,8 @@ def analyze_motion(source: str, show: bool, termination_event: Event):
 
 
 def capture_motion_sync(source: str, show: bool, termination_event: Event, conn: Connection):
+    if not state.IS_SERVICE:
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
     analyze_motion(source, show, termination_event).subscribe(conn.send)
 
 
