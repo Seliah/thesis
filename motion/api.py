@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from logging import DEBUG, basicConfig, getLogger
-from typing import cast
+from typing import List
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -78,9 +78,9 @@ def get_motions_from_pixels(camera_id: str, x_pixels: int, y_pixels: int, width_
 
 
 @app.get("/motion_data/cells")
-def get_motions_from_cells(camera_id: str, x: int, y: int, width: int, height: int):
+def get_motions_from_cells(camera_id: str, x: int, y: int, width: int, height: int) -> List[int]:  # noqa: UP006
     if (x + width) > state.GRID_SIZE[1] or (y + height) > state.GRID_SIZE[0]:
         _logger.error(f"{x}, {y} - {width}, {height}")
         raise HTTPException(422, "Requested selection is out of bounds.")
     merged = get_motions_in_area(state.motions, camera_id, x, y, width, height)
-    return cast("list[int]", merged.nonzero()[1].tolist())
+    return merged.nonzero()[1].tolist()

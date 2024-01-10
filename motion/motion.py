@@ -50,12 +50,11 @@ def update_global_matrix(
     grid_size: tuple[int, int],
     camera_id: str,
 ):
-    width = change_matrix.shape[1]
-    for index in change_matrix.nonzero()[1]:
-        x = index % width
-        y = int(index / width)
+    non_zero = change_matrix.nonzero()
+    for index, y in enumerate(non_zero[0]):
+        x = non_zero[1][index]
         # Update the global matrix
-        index_cell = y * grid_size[0] + x
+        index_cell = y * grid_size[1] + x
         index_time = int(seconds_since_midnight(datetime.now()) / state.INTERVAL)
 
         id_day = str(datetime.now().date())
