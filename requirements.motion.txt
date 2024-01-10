@@ -16,3 +16,12 @@ uvicorn[standard]
 
 # HTTP Requests
 httpx
+
+# Timezone lib
+pytz
+
+# Framework for async operations
+reactivex
+
+# Linter
+ruff
