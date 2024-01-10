@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import state
 from motion.camera_info import get_sources
 from motion.capture import analyze_sources
-from motion.read import get_motions_in_area
+from motion.read import calculate_heatmap, get_motions_in_area
 from util.tasks import create_task
 
 frame_width = 640
@@ -51,6 +51,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/heatmap")
+def get_heatmap(camera_id: str):
+    return calculate_heatmap(state.motions, camera_id)
 
 
 @app.get("/motion_data/percent")

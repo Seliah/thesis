@@ -59,6 +59,17 @@ def get_motions_in_area(
     return reduce(add, rows)
 
 
+def calculate_heatmap(
+    motions: Any,
+    camera_id: str,
+) -> list[int]:
+    day_id = str(datetime.now().date())
+    camera_motions: lil_array = motions[day_id][camera_id]
+    cell_amount = camera_motions.shape[0]
+    cells = [camera_motions.getrow(cell_index) for cell_index in range(cell_amount)]
+    return [cell.nnz for cell in cells]
+
+
 if __name__ == "__main__":
     basicConfig(level=DEBUG)
     # motions = get_motions_in_area("cam", 5, 3, 1, 1)
