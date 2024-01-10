@@ -26,10 +26,11 @@ _logger = getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def main(_: FastAPI):
     _logger.info("Starting analysis.")
     sources = await get_sources()
     task = create_task(analyze_sources(sources), "Capture main task", _logger)
+    # Wait for program termination command
     yield
     _logger.info("Terminating analysis.")
     state.terminating = True
@@ -37,16 +38,17 @@ async def lifespan(_: FastAPI):
     await task
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=main)
 
-origins = [
+# Set CORS headers to enable requests from a browser
+# See https://fastapi.tiangolo.com/tutorial/cors/
+ORIGINS = [
     "https://localhost:4200",
     "https://adeck",
 ]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

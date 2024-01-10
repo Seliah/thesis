@@ -2,6 +2,7 @@ from datetime import datetime
 from logging import DEBUG, basicConfig, getLogger
 from typing import Optional
 
+import cv2
 import typer
 from typing_extensions import Annotated
 
@@ -17,7 +18,7 @@ basicConfig(level=DEBUG)
 _logger = getLogger()
 
 app = typer.Typer()
-read_app = typer.Typer()
+read_app = typer.Typer(help="Read saved analysis data.")
 app.add_typer(read_app, name="read")
 
 
@@ -29,7 +30,7 @@ async def exit_on_input():
     state.termination_event.set()
 
 
-@app.command()
+@app.command(help="Analyze the streams of all cameras in the local video system by Adeck Systems.")
 @typer_async
 async def analyze_all(
     display: Annotated[Optional[str], typer.Argument(help="ID of a camera that is to be visualized.")] = None,
@@ -40,7 +41,7 @@ async def analyze_all(
     await task
 
 
-@app.command()
+@app.command(help="Analyze the given stream, saving it with the source as an id.")
 @typer_async
 async def analyze(
     source: Annotated[Optional[str], typer.Argument(help="Video source. Can be a RTSP URL.")] = None,
@@ -52,9 +53,22 @@ async def analyze(
     await task
 
 
-@read_app.command()
-@typer_async
-async def motions(
+@app.command(help="Show video stream of given source.")
+def view(
+    source: Annotated[Optional[str], typer.Argument(help="Video source. Can be a RTSP URL.")] = None,
+):
+    if source is None:
+        source = URL
+    cap = cv2.VideoCapture(source)
+    while True:
+        _, image = cap.read()
+        cv2.imshow("Video", image)
+        if cv2.waitKey(1) == ord("q"):
+            break
+
+
+@read_app.command(help="Print out timestamps with motion for the given camera.")
+def motions(
     source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
 ):
     if source is None:
@@ -64,9 +78,8 @@ async def motions(
     print_motion_frames(motions[day_id][source])
 
 
-@read_app.command()
-@typer_async
-async def heatmap(
+@read_app.command(help="Print out heatmap data for a given camera.")
+def heatmap(
     source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
 ):
     if source is None:
