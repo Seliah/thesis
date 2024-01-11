@@ -10,12 +10,12 @@ from numpy import concatenate
 from numpy.typing import NDArray
 from scipy.sparse import lil_array
 
-import state
+import definitions
 from util.image import draw_grid, draw_overlay
 from util.time import seconds_since_midnight
 
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
-TIMEFRAMES = int(DAY_IN_SECONDS / state.INTERVAL)
+TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
 
 
 def get_changes(diff: MatLike, grid_size: tuple[int, int]):
@@ -45,7 +45,7 @@ def get_changes(diff: MatLike, grid_size: tuple[int, int]):
 
 
 def update_global_matrix(
-    motions: dict[str, dict[str, lil_array]],
+    motions: definitions.MotionData,
     change_matrix: NDArray[Any],
     grid_size: tuple[int, int],
     camera_id: str,
@@ -55,7 +55,7 @@ def update_global_matrix(
         x = non_zero[1][index]
         # Update the global matrix
         index_cell = y * grid_size[1] + x
-        index_time = int(seconds_since_midnight(datetime.now()) / state.INTERVAL)
+        index_time = int(seconds_since_midnight(datetime.now()) / definitions.INTERVAL)
 
         id_day = str(datetime.now().date())
         if id_day not in motions:
@@ -64,7 +64,7 @@ def update_global_matrix(
 
         id_cam = camera_id
         if id_cam not in day:
-            day[id_cam] = lil_array((state.CELLS, TIMEFRAMES), dtype=bool)
+            day[id_cam] = lil_array((definitions.CELLS, TIMEFRAMES), dtype=bool)
         camera_motions = day[id_cam]
 
         camera_motions[index_cell, index_time] = True
@@ -78,7 +78,7 @@ def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
 
 def prepare(frame: MatLike):
     # Get UMat from Matlike to use GPU in following calulcations via OpenCL
-    frame_umat = cv2.UMat(frame)
+    frame_umat = cv2.UMat(frame)  # type: ignore - this works anyways, the type definition is falsy
 
     # Convert the frame to grayscale
     gray = cv2.cvtColor(frame_umat, cv2.COLOR_BGR2GRAY)
@@ -93,14 +93,14 @@ def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat)
     # Apply a threshold to identify regions with significant differences
     _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
 
-    change_matrix = get_changes(threshold_diff.get(), state.GRID_SIZE)
+    change_matrix = get_changes(threshold_diff.get(), definitions.GRID_SIZE)
 
     # Return the current frame as the reference frame
     return original, frame, frame_diff, change_matrix
 
 
 def display(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, change_matrix: NDArray[Any]):
-    grid = draw_grid(frame.get().copy(), state.GRID_SIZE)
+    grid = draw_grid(frame.get().copy(), definitions.GRID_SIZE)
     overlayed = draw_overlay(grid, change_matrix)
 
     # Display the results or perform other actions based on motion detection

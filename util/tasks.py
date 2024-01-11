@@ -15,16 +15,17 @@ LOG_TASKS = True
 loop = get_event_loop()
 
 
-def typer_async(f):
+def typer_async(f: Callable[..., Any]):
     """Run a function in the current event loop.
 
     This can be used to use an async function as a typer command.
+    This code was orignally formulated in typer's issue
 
     See https://github.com/tiangolo/typer/issues/85#issuecomment-1365871959
     """
 
     @wraps(f)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: ..., **kwargs: ...):
         return loop.run_until_complete(f(*args, **kwargs))
 
     return wrapper
