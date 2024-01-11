@@ -1,0 +1,49 @@
+[tool.ruff]
+# For available rules see https://beta.ruff.rs/docs/rules/
+# For origin of ALL see https://github.com/astral-sh/ruff/issues/2179
+# Replaces isort, pydocstyle, yesqa, eradicate, pyupgrade (see https://github.com/astral-sh/ruff)
+# Replaces Unimport (see https://pypi.org/project/unimport/)
+select = ["ALL"]
+ignore = [
+  # missing-type-self
+  # We want implicit typing as we are using pyright via pylance
+  "ANN101",
+  # missing-return-type-undocumented-public-function
+  # We want implicit typing as we are using pyright via pylance
+  "ANN201",
+  # missing-return-type-private-function
+  # We want implicit typing as we are using pyright via pylance
+  "ANN202",
+  # logging-f-string
+  # We want to use f-strings in logging statements
+  "G004",
+  # raw-string-in-exception
+  # Subjective: Readability is not impaired by this
+  "EM101",
+  # raise-vanilla-args
+  # Subjective: Custom messages for specific exceptions is okay
+  "TRY003",
+  # error-instead-of-exception
+  # We also want the log level "ERROR" in systemd, printing the stack trace is not always a good option
+  "TRY400",
+  # missing-todo-link
+  # As we don't have issues for every problem/feature/refactor at the moment, this is unrealistic
+  "TD003",
+  # one-blank-line-before-class
+  # Incompatibility with no-blank-line-before-class
+  "D203",
+  # multi-line-summary-second-line
+  # Incompatibility with multi-line-summary-first-line
+  "D213",
+  # line-contains-todo
+  # these are handled via todos plugin in vscode
+  "FIX002",
+  # boolean-positional-arg-in-function-definition
+  # Subjective: If specified the right way, boolean parameters can be explicit enough
+  "FBT001",
+  # boolean-default-value-in-function-definition
+  # Subjective: Ambiguity with default parameters are benefitial when the name is explicit enough
+  "FBT002",
+]
+line-length = 120
+target-version = "py38"
