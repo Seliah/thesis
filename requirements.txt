@@ -25,3 +25,6 @@ ruff
 
 # YOLO
 ultralytics
+
+# Training
+roboflow
