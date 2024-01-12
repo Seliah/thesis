@@ -8,7 +8,6 @@ datasets
 weights
 
 # Tests
-images
 *.npy
 
 # Automatically created ignores follow:
