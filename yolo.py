@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, TypedDict, cast
+from typing import Dict, List, Optional, TypedDict, cast
 
 import typer
 from cv2 import imshow, rectangle, resize, waitKey
@@ -58,10 +58,11 @@ def image(
     model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
     path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
     labels: Annotated[bool, typer.Option(help="Whether or not to show class names.")] = False,
+    conf: Annotated[Optional[float], typer.Option(help="Whether or not to show class names.")] = None,
 ):
     """Analyze a given image."""
     model = YOLO(models[model_id]["path"])
-    results = cast(List[Results], model.predict(path))
+    results = cast(List[Results], model.predict(path, conf=conf))
     for result in results:
         # result.
         console.print(result.boxes)
