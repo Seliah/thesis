@@ -70,9 +70,12 @@ def update_global_matrix(
         camera_motions[index_cell, index_time] = True
 
 
+def show_two(x1: MatLike, x2: MatLike):
+    return concatenate((x1, x2), axis=1)
+
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
-    top_row = concatenate((x1, x2), axis=1)
-    bottom_row = concatenate((x3, x4), axis=1)
+    top_row = show_two(x1, x2)
+    bottom_row = show_two(x3, x4)
     return concatenate((top_row, bottom_row), axis=0)
 
 

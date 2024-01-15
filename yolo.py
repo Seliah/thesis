@@ -3,13 +3,15 @@ from pathlib import Path
 from typing import Dict, List, Optional, TypedDict, cast
 
 import typer
-from cv2 import imshow, rectangle, resize, waitKey
+from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
 from cv2.typing import Rect
 from rich.console import Console
 from torchvision.ops import box_iou
 from typing_extensions import Annotated
 from ultralytics import YOLO
 from ultralytics.engine.results import Results
+
+from util.image import warp
 
 console = Console()
 app = typer.Typer()
@@ -122,6 +124,37 @@ def shelf(
 def get_rect_from_box(box: List[float]) -> Rect:
     coords = (box[0], box[1], box[2] - box[0], box[3] - box[1])
     return [int(coord) for coord in coords]
+
+
+@app.command()
+def cropped(
+    path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
+):
+    img = imread(str(path))
+    # 3
+    points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
+    # 2
+    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
+    image_warped = warp(img, points)
+    imshow("Cropped", image_warped)
+    waitKey(0)
+
+
+@app.command()
+def shelf_stream(
+    source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
+):
+    cap = VideoCapture(source)
+    while True:
+        _, image = cap.read()
+        # 3
+        points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
+        # 2
+        # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
+        image_warped = warp(image, points)
+        imshow("Video", image_warped)
+        if waitKey(1) == ord("q"):
+            break
 
 
 if __name__ == "__main__":
