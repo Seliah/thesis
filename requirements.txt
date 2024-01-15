@@ -1,30 +1,31 @@
-# CLI
-typer[all]
+## Analysis
+# Common computer Vision algorithms and video stream input for analysis
+opencv-python
+# Sparse arrays for motion search
+scipy
+# Framework for async operations and a better structure
+reactivex
+# YOLOv8 for training and detection of deep learning algorithms
+ultralytics
+# Datasets for deep learning algorithms
+roboflow
 
-# Type definitions
+## Integration
+# HTTP Requests framework for higher level and typed API calls
+httpx
+# Type definitions and automated validation
 pydantic
 
-# Computer Vision algorithms
-opencv-python
-# Sparse arrays
-scipy
-
-# HTTP API
+## API
+# HTTP API for external availabilty
 fastapi
+
+## Usage
 # ASGI server for production
 uvicorn[standard]
+# CLI for debug usage
+typer[all]
 
-# HTTP Requests
-httpx
-
-# Framework for async operations
-reactivex
-
-# Linter
+## Dev Tools
+# Linter for preventing runtime issues
 ruff
-
-# YOLO
-ultralytics
-
-# Training
-roboflow
