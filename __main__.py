@@ -12,10 +12,12 @@ import typer
 from typing_extensions import Annotated
 
 import state
+from definitions import GRID_SIZE
 from motion.camera_info import get_sources
 from motion.capture import analyze_sources
 from motion.read import calculate_heatmap, get_motion_data, print_motion_frames
 from user_secrets import URL
+from util.image import draw_grid
 from util.input import prompt
 from util.tasks import create_task, typer_async
 
@@ -63,13 +65,19 @@ async def analyze(
 @app.command()
 def view(
     source: Annotated[Optional[str], typer.Argument(help="Video source. Can be a RTSP URL.")] = None,
+    grid: Annotated[bool, typer.Option(help="Show the segment grid.")] = False,
 ):
     """Show video stream of given source."""
     if source is None:
         source = URL
-    cap = cv2.VideoCapture(source)
+    cap = cv2.VideoCapture(0) if source == "0" else cv2.VideoCapture(source)
+    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     while True:
         _, image = cap.read()
+        if grid:
+            print(image.shape)
+            image = draw_grid(image, GRID_SIZE)
         cv2.imshow("Video", image)
         if cv2.waitKey(1) == ord("q"):
             break
