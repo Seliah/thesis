@@ -8,19 +8,19 @@ from logging import DEBUG, basicConfig, getLogger
 from typing import Optional
 
 import cv2
+import state
 import typer
+from definitions import GRID_SIZE
 from rich.console import Console
 from typing_extensions import Annotated
-
-import state
-from definitions import GRID_SIZE
-from motion.camera_info import get_sources
-from motion.capture import analyze_sources
-from motion.read import calculate_heatmap, get_motion_data, print_motion_frames
-from user_secrets import URL
 from util.image import draw_grid
 from util.input import prompt
 from util.tasks import create_task, typer_async
+
+from analysis.vision.camera_info import get_sources
+from analysis.vision.capture import analyze_sources
+from analysis.vision.read import calculate_heatmap, get_motion_data, print_motion_frames
+from user_secrets import URL
 
 basicConfig(level=DEBUG)
 _logger = getLogger()

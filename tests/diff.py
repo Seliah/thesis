@@ -5,8 +5,8 @@ from cv2 import COLOR_BGR2GRAY, VideoCapture, absdiff, cvtColor, imshow, waitKey
 from cv2.typing import MatLike
 from reactivex import operators as ops
 
-from motion.motion import show_four
-from util.rx import from_capture
+from analysis.util.rx import from_capture
+from analysis.vision.motion import show_four
 
 
 def analyze_image(images: Tuple[MatLike, MatLike]):

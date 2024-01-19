@@ -4,17 +4,17 @@ from contextlib import asynccontextmanager
 from logging import DEBUG, basicConfig, getLogger
 from typing import List, Tuple, cast
 
+import definitions
+import state
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from numpy import uint32
 from numpy.typing import NDArray
-
-import definitions
-import state
-from motion.camera_info import get_sources
-from motion.capture import analyze_sources
-from motion.read import calculate_heatmap, get_motions_in_area
 from util.tasks import create_task
+
+from analysis.vision.camera_info import get_sources
+from analysis.vision.capture import analyze_sources
+from analysis.vision.read import calculate_heatmap, get_motions_in_area
 
 frame_width = 640
 frame_height = 360

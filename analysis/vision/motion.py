@@ -4,13 +4,12 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import cv2
+import definitions
 import numpy
 from cv2.typing import MatLike
 from numpy import concatenate
 from numpy.typing import NDArray
 from scipy.sparse import lil_array
-
-import definitions
 from util.image import draw_grid, draw_overlay
 from util.time import seconds_since_midnight
 

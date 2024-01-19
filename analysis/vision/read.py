@@ -7,11 +7,10 @@ from operator import add
 from time import perf_counter
 from typing import Any, cast
 
-from numpy import load
-from scipy.sparse import lil_array
-
 import definitions
 import state
+from numpy import load
+from scipy.sparse import lil_array
 from util.time import today
 
 _logger = getLogger(__name__)

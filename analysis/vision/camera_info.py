@@ -1,7 +1,7 @@
 from httpx import AsyncClient
-
 from types_adeck import parse_all
 from types_adeck.camera import Camera
+
 from user_secrets import CAMERA_URL, C
 
 client = AsyncClient(verify=C, timeout=5)

@@ -34,7 +34,7 @@ def parse(app_type: Type[T], json: Any) -> Optional[T]:
         return app_type(**json)
     except ValidationError as exception:
         _logger.error(
-            f"Error parsing camera data for {app_type.repr_raw(json)}: {exception}"
+            f"Error parsing camera data for {app_type.repr_raw(json)}: {exception}",
         )
 
 

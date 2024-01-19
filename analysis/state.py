@@ -5,7 +5,8 @@ from __future__ import annotations
 from multiprocessing import Manager
 
 from definitions import MotionData
-from motion.read import load_motions
+
+from analysis.vision.read import load_motions
 
 manager = Manager()
 termination_event = manager.Event()
