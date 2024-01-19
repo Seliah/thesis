@@ -73,6 +73,7 @@ def update_global_matrix(
 def show_two(x1: MatLike, x2: MatLike):
     return concatenate((x1, x2), axis=1)
 
+
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     top_row = show_two(x1, x2)
     bottom_row = show_two(x3, x4)
@@ -102,7 +103,7 @@ def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat)
     return original, frame, frame_diff, change_matrix
 
 
-def display(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, change_matrix: NDArray[Any]):
+def visualize(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, change_matrix: NDArray[Any]):
     grid = draw_grid(frame.get().copy(), definitions.GRID_SIZE)
     overlayed = draw_overlay(grid, change_matrix)
 

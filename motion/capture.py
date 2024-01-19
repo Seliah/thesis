@@ -14,7 +14,7 @@ from reactivex.operators import map as map_op
 
 import definitions
 import state
-from motion.motion import analyze_diff, display, prepare, update_global_matrix
+from motion.motion import analyze_diff, prepare, update_global_matrix, visualize
 from util.rx import from_capture
 from util.tasks import create_task
 
@@ -43,7 +43,7 @@ def analyze_motion(source: str, show: bool, termination_event: Event):
         pairwise(),
         map_op(lambda pair: analyze_diff(pair[1][0], pair[1][1], pair[0][1])),
         # Display
-        do_action(lambda t: display(t[0], t[1], t[2], t[3]) if show else None),
+        do_action(lambda t: visualize(t[0], t[1], t[2], t[3]) if show else None),
         map_op(lambda t: t[3]),
     )
 

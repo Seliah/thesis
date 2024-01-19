@@ -9,6 +9,7 @@ from typing import Optional
 
 import cv2
 import typer
+from rich.console import Console
 from typing_extensions import Annotated
 
 import state
@@ -23,6 +24,7 @@ from util.tasks import create_task, typer_async
 
 basicConfig(level=DEBUG)
 _logger = getLogger()
+console = Console()
 
 app = typer.Typer()
 read_app = typer.Typer(help="Read saved analysis data.")
@@ -76,7 +78,7 @@ def view(
     while True:
         _, image = cap.read()
         if grid:
-            print(image.shape)
+            # print(image.shape)
             image = draw_grid(image, GRID_SIZE)
         cv2.imshow("Video", image)
         if cv2.waitKey(1) == ord("q"):
@@ -102,7 +104,7 @@ def heatmap(
     """Print out heatmap data for a given camera."""
     if source is None:
         source = URL
-    print(calculate_heatmap(source))
+    console.print(calculate_heatmap(source))
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def warp(image: MatLike, points: RectPoints):
     See https://pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
     See https://theailearner.com/tag/cv2-warpperspective/
     """
-    width_max, height_max = get_max_size(points)
+    width_max, height_max = _get_max_size(points)
     src = array(points, dtype="float32")
     dst = array(
         [[0.0, 0.0], [width_max - 1, 0.0], [width_max - 1, height_max - 1], [0, height_max - 1]],
@@ -83,7 +83,7 @@ def warp(image: MatLike, points: RectPoints):
     return cv2.warpPerspective(image, transform, (width_max, height_max), flags=cv2.INTER_LINEAR)
 
 
-def get_max_size(points: RectPoints):
+def _get_max_size(points: RectPoints):
     (top_left, top_right, bottom_right, bottom_left) = points
     # See https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.euclidean.html#scipy.spatial.distance.euclidean
     width_top = euclidean(top_left, top_right)
