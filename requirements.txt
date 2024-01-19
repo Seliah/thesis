@@ -3,6 +3,7 @@
 opencv-python
 # Sparse arrays for motion search
 # Use specific version to prevent incompatibility with numpy
+# An unspecified version resulted in the program crashing on start
 SciPy==1.10.1
 # Framework for async operations and a better structure
 reactivex

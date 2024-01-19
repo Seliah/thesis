@@ -1,5 +1,9 @@
 # Thesis Elias Zielke
 
+## Structure
+
+This project is structered in the "flat layout" style, described by the official packaging documentation: <https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/>
+
 ## Installation
 
 Firstly, setup a virtual environment and activate it:
@@ -28,6 +32,8 @@ For usage with the CPU:
 ```bash
 pip install -r ./requirements.cpu.txt
 ```
+
+For additional information for this step, see PyTorch installation page: <https://pytorch.org/get-started/locally/>
 
 Now, the remaining requirements can be installed:
 
