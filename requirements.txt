@@ -2,7 +2,8 @@
 # Common computer Vision algorithms and video stream input for analysis
 opencv-python
 # Sparse arrays for motion search
-scipy
+# Use specific version to prevent incompatibility with numpy
+SciPy==1.10.1
 # Framework for async operations and a better structure
 reactivex
 # YOLOv8 for training and detection of deep learning algorithms
