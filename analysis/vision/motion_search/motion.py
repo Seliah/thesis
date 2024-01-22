@@ -1,4 +1,4 @@
-"""Module that implements logic for the motion search function."""
+"""Module that implements logic for the motion detection function."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta

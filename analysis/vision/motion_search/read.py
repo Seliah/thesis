@@ -1,14 +1,13 @@
-"""Module that implements logic to read motion data from the store or the drive."""
+"""Module that implements logic to read and interpret motion data from the local state."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
 from functools import reduce
-from logging import DEBUG, basicConfig, getLogger
+from logging import DEBUG, basicConfig
 from operator import add
 from time import perf_counter
 from typing import TYPE_CHECKING, cast
 
-from numpy import load
 from rich.console import Console
 
 from analysis import definitions, state
@@ -18,19 +17,7 @@ if TYPE_CHECKING:
     from cv2.typing import Rect
     from scipy.sparse import lil_array
 
-_logger = getLogger(__name__)
 console = Console()
-
-
-def load_motions() -> definitions.MotionData:
-    """Load the motion store from disk."""
-    try:
-        _logger.debug(f"Loading motion data from {definitions.PATH_MOTIONS}.")
-        with definitions.PATH_MOTIONS.open("rb") as f:
-            return load(f, allow_pickle=True).item()
-    except FileNotFoundError:
-        _logger.info("No saved motion data was found, starting fresh.")
-        return {}
 
 
 def print_motion_frames(camera_motions: lil_array):

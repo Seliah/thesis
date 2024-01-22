@@ -19,7 +19,8 @@ from analysis.util.image import draw_grid
 from analysis.util.input import prompt
 from analysis.util.tasks import create_task, typer_async
 from analysis.vision.capture import analyze_sources
-from analysis.vision.motion_search.read import calculate_heatmap, get_motion_data, print_motion_frames
+from analysis.vision.motion_search import cli as motion_cli
+from analysis.vision.shelf_monitoring import cli as shelf_cli
 from user_secrets import URL
 
 basicConfig(level=DEBUG)
@@ -27,8 +28,8 @@ _logger = getLogger()
 console = Console()
 
 app = typer.Typer()
-read_app = typer.Typer(help="Read saved analysis data.")
-app.add_typer(read_app, name="read")
+app.add_typer(motion_cli.app, name="motion")
+app.add_typer(shelf_cli.app, name="shelf")
 
 
 async def _exit_on_input():
@@ -85,28 +86,6 @@ def view(
         cv2.imshow("Video", image)
         if cv2.waitKey(1) == ord("q"):
             break
-
-
-@read_app.command()
-def motions(
-    source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
-):
-    """Print out timestamps with motion for the given camera."""
-    if source is None:
-        source = URL
-    if (motion_data := get_motion_data(source)) is None:
-        return
-    print_motion_frames(motion_data)
-
-
-@read_app.command()
-def heatmap(
-    source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
-):
-    """Print out heatmap data for a given camera."""
-    if source is None:
-        source = URL
-    console.print(calculate_heatmap(source))
 
 
 if __name__ == "__main__":

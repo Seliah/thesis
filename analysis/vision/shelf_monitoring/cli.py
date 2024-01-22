@@ -1,10 +1,16 @@
-"""Module that defines data for deep learning based computer vision."""
+"""Module for definition of motion_search debug cli.
+
+See __main__ for application.
+
+You will see that import are done in many commands.
+These imports take a while and are therefore "lazy loaded" like this.
+They are only imported, when they are actually needed inside a command.
+"""
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
-from enum import Enum
 from pathlib import Path
 from threading import Event
-from typing import Dict, List, Optional, TypedDict, cast
+from typing import List, Optional, cast
 
 import typer
 from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
@@ -13,45 +19,14 @@ from reactivex import operators as ops
 from reactivex.operators import map as map_op
 from reactivex.operators import throttle_first
 from rich.console import Console
-from torchvision.ops import box_iou
 from typing_extensions import Annotated
-from ultralytics import YOLO
-from ultralytics.engine.results import Results
 
 from analysis.util.image import warp
 from analysis.util.rx import from_capture
+from analysis.vision.shelf_monitoring.models import Model, models
 
 console = Console()
 app = typer.Typer()
-
-
-class _Model(str, Enum):
-    ossa = "ossa"
-    sku = "sku110k"
-    m = "m"
-
-
-class _ModelInfo(TypedDict):
-    info: str
-    """A description of the given model."""
-    path: Path
-    """The path of the weights file."""
-
-
-models: Dict[str, _ModelInfo] = {
-    _Model.ossa: {
-        "info": "qwer",
-        "path": Path("weights/yolov8_ossa.pt"),
-    },
-    _Model.sku: {
-        "info": "asdf",
-        "path": Path("weights/yolov8_sku110k.pt"),
-    },
-    _Model.m: {
-        "info": "yxcv",
-        "path": Path("weights/yolov8m.pt"),
-    },
-}
 
 
 class _AnalysisError(Exception):
@@ -59,8 +34,10 @@ class _AnalysisError(Exception):
 
 
 @app.command()
-def info(model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")]):
+def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")]):
     """Print out heatmap data for a given camera."""
+    from ultralytics import YOLO
+
     model = YOLO(models[model_id]["path"])
     console.print("Classes:")
     console.print(models[model_id]["info"])
@@ -69,12 +46,15 @@ def info(model_id: Annotated[_Model, typer.Argument(help="Which model to use for
 
 @app.command()
 def image(
-    model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")],
+    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
     path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
     labels: Annotated[bool, typer.Option(help="Whether or not to show class names.")] = False,
     conf: Annotated[Optional[float], typer.Option(help="Whether or not to show class names.")] = None,
 ):
     """Analyze a given image."""
+    from ultralytics import YOLO
+    from ultralytics.engine.results import Results
+
     model = YOLO(models[model_id]["path"])
     results = cast(List[Results], model.predict(path, conf=conf))
     for result in results:
@@ -85,10 +65,12 @@ def image(
 @app.command()
 def stream(
     source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
-    model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")],
+    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
     labels: Annotated[bool, typer.Argument(help="Whether or not to show class names.")] = False,
 ):
     """Analyze a given video stream."""
+    from ultralytics import YOLO
+
     model = YOLO(models[model_id]["path"])
     # for result in model.predict(source, stream=True):
     for result in model.predict(source, stream=True, classes=[0]):
@@ -107,8 +89,12 @@ def shelf(
 
     This will detect missing items in img2 that were present in img1.
     """
-    model_sku = YOLO(models[_Model.sku]["path"])
-    model_ossa = YOLO(models[_Model.ossa]["path"])
+    from torchvision.ops import box_iou
+    from ultralytics import YOLO
+    from ultralytics.engine.results import Results
+
+    model_sku = YOLO(models[Model.sku]["path"])
+    model_ossa = YOLO(models[Model.ossa]["path"])
 
     result_sku = cast(List[Results], model_sku.predict(path_img1))[0]
     sku_boxes = result_sku.boxes
@@ -156,10 +142,12 @@ def shelf_stream(
     source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
 ):
     """Analyze a video stream with shelf monitoring."""
+    from ultralytics import YOLO
+
     points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
     cap = VideoCapture(source)
-    model_sku = YOLO(models[_Model.sku]["path"])
-    model_ossa = YOLO(models[_Model.ossa]["path"])
+    model_sku = YOLO(models[Model.sku]["path"])
+    model_ossa = YOLO(models[Model.ossa]["path"])
 
     from_capture(cap, Event()).pipe(
         throttle_first(1 / 2),
