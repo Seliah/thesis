@@ -1,17 +1,23 @@
+"""Module that defines data for deep learning based computer vision."""
 from enum import Enum
 from pathlib import Path
+from threading import Event
 from typing import Dict, List, Optional, TypedDict, cast
 
 import typer
 from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
-from cv2.typing import Rect
+from cv2.typing import MatLike, Rect
+from reactivex import operators as ops
+from reactivex.operators import map as map_op
+from reactivex.operators import throttle_first
 from rich.console import Console
 from torchvision.ops import box_iou
 from typing_extensions import Annotated
 from ultralytics import YOLO
 from ultralytics.engine.results import Results
 
-from util.image import warp
+from analysis.util.image import warp
+from analysis.util.rx import from_capture
 
 console = Console()
 app = typer.Typer()
@@ -66,9 +72,6 @@ def image(
     model = YOLO(models[model_id]["path"])
     results = cast(List[Results], model.predict(path, conf=conf))
     for result in results:
-        # result.
-        console.print(result.boxes)
-        # console.print(result.numpy())
         imshow("Results", result.plot(labels=labels, line_width=2))
         waitKey(0)
 
@@ -99,12 +102,13 @@ def shelf(
     This will detect missing items in img2 that were present in img1.
     """
     model_sku = YOLO(models[Model.sku]["path"])
+    model_ossa = YOLO(models[Model.ossa]["path"])
+
     result_sku = cast(List[Results], model_sku.predict(path_img1))[0]
     sku_boxes = result_sku.boxes
     if sku_boxes is None:
         raise Exception
 
-    model_ossa = YOLO(models[Model.ossa]["path"])
     result_ossa = cast(List[Results], model_ossa.predict(path_img2))[0]
     ossa_boxes = result_ossa.boxes
     if ossa_boxes is None:
@@ -144,17 +148,29 @@ def cropped(
 def shelf_stream(
     source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
 ):
+    # 3
+    points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
+    # 2
+    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
     cap = VideoCapture(source)
-    while True:
-        _, image = cap.read()
-        # 3
-        points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
-        # 2
-        # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
-        image_warped = warp(image, points)
-        imshow("Video", image_warped)
-        if waitKey(1) == ord("q"):
-            break
+    model_sku = YOLO(models[Model.sku]["path"])
+    model_ossa = YOLO(models[Model.ossa]["path"])
+
+    from_capture(cap, Event()).pipe(
+        throttle_first(1 / 2),
+        map_op(lambda image: warp(image, points)),
+        ops.buffer_with_count(5),
+        # ops.do_action(lambda values: console.print(values[-1])),
+        # map_op(model_sku.predict),
+        # pairwise(),
+    ).subscribe()
+    # ).subscribe(lambda images: show(cap, images[1][0].plot()))
+
+
+def show(cap: VideoCapture, image: MatLike):
+    imshow("Video", image)
+    if waitKey(1) == ord("q"):
+        cap.release()
 
 
 if __name__ == "__main__":

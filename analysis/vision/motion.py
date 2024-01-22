@@ -1,17 +1,20 @@
+"""Module that implements logic for the motion search function."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import cv2
-import definitions
-import numpy
-from cv2.typing import MatLike
-from numpy import concatenate
-from numpy.typing import NDArray
+import numpy as np
 from scipy.sparse import lil_array
-from util.image import draw_grid, draw_overlay
-from util.time import seconds_since_midnight
+
+from analysis import definitions
+from analysis.util.image import draw_grid, draw_overlay
+from analysis.util.time import seconds_since_midnight
+
+if TYPE_CHECKING:
+    from cv2.typing import MatLike
+    from numpy.typing import NDArray
 
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
@@ -26,7 +29,7 @@ def get_changes(diff: MatLike, grid_size: tuple[int, int]):
     cell_width = width // grid_size[1]
 
     # Initialize the boolean matrix
-    boolean_matrix = numpy.zeros(grid_size, dtype=bool)
+    boolean_matrix = np.zeros(grid_size, dtype=bool)
 
     # Iterate over the cells in the grid
     for y in range(grid_size[0]):
@@ -37,7 +40,7 @@ def get_changes(diff: MatLike, grid_size: tuple[int, int]):
                 x * cell_width : (x + 1) * cell_width,
             ]
             # Check if the cell contains any non-zero values
-            if has_values := numpy.any(cell != 0):
+            if has_values := np.any(cell != 0):
                 # Update the boolean matrix
                 boolean_matrix[y, x] = has_values
     return boolean_matrix
@@ -54,9 +57,9 @@ def update_global_matrix(
         x = non_zero[1][index]
         # Update the global matrix
         index_cell = y * grid_size[1] + x
-        index_time = int(seconds_since_midnight(datetime.now()) / definitions.INTERVAL)
+        index_time = int(seconds_since_midnight(datetime.now(definitions.TIMEZONE)) / definitions.INTERVAL)
 
-        id_day = str(datetime.now().date())
+        id_day = str(datetime.now(definitions.TIMEZONE).date())
         if id_day not in motions:
             motions[id_day] = {}
         day = motions[id_day]
@@ -70,13 +73,13 @@ def update_global_matrix(
 
 
 def show_two(x1: MatLike, x2: MatLike):
-    return concatenate((x1, x2), axis=1)
+    return np.concatenate((x1, x2), axis=1)
 
 
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     top_row = show_two(x1, x2)
     bottom_row = show_two(x3, x4)
-    return concatenate((top_row, bottom_row), axis=0)
+    return np.concatenate((top_row, bottom_row), axis=0)
 
 
 def prepare(frame: MatLike):

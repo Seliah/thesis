@@ -1,3 +1,4 @@
+"""Module for defining common time functions."""
 from datetime import datetime
 
 # This is 0000-00-00...

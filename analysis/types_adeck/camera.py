@@ -1,8 +1,9 @@
+"""Module that defines the type for cameras."""
 from typing import Any, Mapping
 
 from pydantic.dataclasses import dataclass
 
-from types_adeck import BaseType
+from analysis.types_adeck import BaseType
 
 
 @dataclass

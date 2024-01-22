@@ -1,7 +1,11 @@
-from httpx import AsyncClient
-from types_adeck import parse_all
-from types_adeck.camera import Camera
+"""Module for implementing the logic to get camera information.
 
+This is done via HTTP communication with the adeck vms.
+"""
+from httpx import AsyncClient
+
+from analysis.types_adeck import parse_all
+from analysis.types_adeck.camera import Camera
 from user_secrets import CAMERA_URL, C
 
 client = AsyncClient(verify=C, timeout=5)

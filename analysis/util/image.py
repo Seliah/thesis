@@ -1,3 +1,7 @@
+"""Module for implementing reusable functionality for image data.
+
+This can for example be functions for visualizations or other image edits/analysis functions.
+"""
 from __future__ import annotations
 
 from typing import Any, Tuple

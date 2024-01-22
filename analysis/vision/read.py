@@ -1,3 +1,4 @@
+"""Module that implements logic to read saved data on the drive."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -7,11 +8,11 @@ from operator import add
 from time import perf_counter
 from typing import Any, cast
 
-import definitions
-import state
 from numpy import load
 from scipy.sparse import lil_array
-from util.time import today
+
+from analysis import definitions, state
+from analysis.util.time import today
 
 _logger = getLogger(__name__)
 
@@ -42,7 +43,7 @@ def get_motions_in_area(
     cell_width: int,
     cell_height: int,
 ) -> lil_array:
-    day_id = str(datetime.now().date())
+    day_id = str(datetime.now(definitions.TIMEZONE).date())
     camera_motions: lil_array = motions[day_id][camera_id]
     indices_rows = [
         [
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     # for index in motions.nonzero()[1]:
     #     print(today() + timedelta(seconds=int(index)))
     start_time = perf_counter()
-    day_id = str(datetime.now().date())
+    day_id = str(datetime.now(definitions.TIMEZONE).date())
     cams = state.motions.get(day_id, None)
     if cams is None:
         print(f"No entries for day {day_id}")

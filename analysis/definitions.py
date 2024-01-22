@@ -1,4 +1,8 @@
-"""Module for saving constant values."""
+"""Module for saving constant values.
+
+These values should be available at the start of the program and never change.
+See :module:`state` for runtime variables.
+"""
 from __future__ import annotations
 
 import os

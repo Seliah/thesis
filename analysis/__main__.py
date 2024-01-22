@@ -10,13 +10,13 @@ from typing import Optional
 import cv2
 import state
 import typer
-from definitions import GRID_SIZE
 from rich.console import Console
 from typing_extensions import Annotated
-from util.image import draw_grid
-from util.input import prompt
-from util.tasks import create_task, typer_async
 
+from analysis.definitions import GRID_SIZE
+from analysis.util.image import draw_grid
+from analysis.util.input import prompt
+from analysis.util.tasks import create_task, typer_async
 from analysis.vision.camera_info import get_sources
 from analysis.vision.capture import analyze_sources
 from analysis.vision.read import calculate_heatmap, get_motion_data, print_motion_frames
@@ -70,15 +70,17 @@ def view(
     grid: Annotated[bool, typer.Option(help="Show the segment grid.")] = False,
 ):
     """Show video stream of given source."""
-    if source is None:
-        source = URL
-    cap = cv2.VideoCapture(0) if source == "0" else cv2.VideoCapture(source)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    if source == "0":
+        cap = cv2.VideoCapture(0)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    else:
+        if source is None:
+            source = URL
+        cap = cv2.VideoCapture(source)
     while True:
         _, image = cap.read()
         if grid:
-            # print(image.shape)
             image = draw_grid(image, GRID_SIZE)
         cv2.imshow("Video", image)
         if cv2.waitKey(1) == ord("q"):

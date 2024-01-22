@@ -1,4 +1,4 @@
-"""Module for providing standardized task usage tools."""
+"""Module for providing standardized asyncio task usage tools."""
 from __future__ import annotations
 
 import asyncio

@@ -1,3 +1,4 @@
+"""Module for expanding the functionality of RxPY."""
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 from threading import Event

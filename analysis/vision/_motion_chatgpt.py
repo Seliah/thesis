@@ -1,7 +1,7 @@
 # Ignore linter and type hints because this is just for documentation
 # ruff: noqa
 # type: ignore
-"""ChatGPT's take on the problem.
+"""ChatGPT's take on the motion problem.
 
 This file is just for reference and unused.
 """

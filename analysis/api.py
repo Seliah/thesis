@@ -1,17 +1,21 @@
+"""Module for defining API app.
+
+This module can be used to run this analysis logic with an HTTP API for communication.
+It is intended to run this as a systemd service unit. It is optimized for running long term.
+"""
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from logging import DEBUG, basicConfig, getLogger
 from typing import List, Tuple, cast
 
-import definitions
-import state
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from numpy import uint32
 from numpy.typing import NDArray
-from util.tasks import create_task
 
+from analysis import definitions, state
+from analysis.util.tasks import create_task
 from analysis.vision.camera_info import get_sources
 from analysis.vision.capture import analyze_sources
 from analysis.vision.read import calculate_heatmap, get_motions_in_area

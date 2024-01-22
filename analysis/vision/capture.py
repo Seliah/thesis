@@ -8,14 +8,13 @@ from multiprocessing import Pipe
 from typing import TYPE_CHECKING
 
 import cv2
-import definitions
-import state
 from numpy import asanyarray, save
 from reactivex.operators import do_action, pairwise, throttle_first
 from reactivex.operators import map as map_op
-from util.rx import from_capture
-from util.tasks import create_task
 
+from analysis import definitions, state
+from analysis.util.rx import from_capture
+from analysis.util.tasks import create_task
 from analysis.vision.motion import analyze_diff, prepare, update_global_matrix, visualize
 
 if TYPE_CHECKING:
