@@ -1,3 +1,8 @@
+"""Module for implementing type definitions for data from the adeck systems vms.
+
+These types can be used for automatic validation, type checking, linting and intellisense in IDEs.
+"""
+
 from abc import ABC, abstractmethod
 from logging import getLogger
 from typing import Any, List, Optional, Type, TypeVar
