@@ -13,13 +13,13 @@ import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
+from analysis.camera_info import get_sources
 from analysis.definitions import GRID_SIZE
 from analysis.util.image import draw_grid
 from analysis.util.input import prompt
 from analysis.util.tasks import create_task, typer_async
-from analysis.vision.camera_info import get_sources
 from analysis.vision.capture import analyze_sources
-from analysis.vision.read import calculate_heatmap, get_motion_data, print_motion_frames
+from analysis.vision.motion_search.read import calculate_heatmap, get_motion_data, print_motion_frames
 from user_secrets import URL
 
 basicConfig(level=DEBUG)

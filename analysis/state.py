@@ -9,7 +9,7 @@ from __future__ import annotations
 from multiprocessing import Manager
 from typing import TYPE_CHECKING
 
-from analysis.vision.read import load_motions
+from analysis.vision.motion_search.read import load_motions
 
 if TYPE_CHECKING:
     from analysis.definitions import MotionData

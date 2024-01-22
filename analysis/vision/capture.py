@@ -15,7 +15,7 @@ from reactivex.operators import map as map_op
 from analysis import definitions, state
 from analysis.util.rx import from_capture
 from analysis.util.tasks import create_task
-from analysis.vision.motion import analyze_diff, prepare, update_global_matrix, visualize
+from analysis.vision.motion_search.motion import analyze_diff, prepare, update_global_matrix, visualize
 
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection

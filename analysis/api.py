@@ -15,10 +15,10 @@ from numpy import uint32
 from numpy.typing import NDArray
 
 from analysis import definitions, state
+from analysis.camera_info import get_sources
 from analysis.util.tasks import create_task
-from analysis.vision.camera_info import get_sources
 from analysis.vision.capture import analyze_sources
-from analysis.vision.read import calculate_heatmap, get_motions_in_area
+from analysis.vision.motion_search.read import calculate_heatmap, get_motions_in_area
 
 basicConfig(level=DEBUG)
 _logger = getLogger(__name__)
