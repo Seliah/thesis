@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import asyncio
-from asyncio import AbstractEventLoop, Task, get_event_loop
+from asyncio import Task, get_event_loop
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Coroutine, TypeVar
 
@@ -55,7 +55,6 @@ def create_task(
     name: str,
     logger: Logger,
     on_done: Callable[[Task[T]], Any] | None = None,
-    loop: AbstractEventLoop | None = None,
     print_exceptions: bool = False,
 ) -> Task[T]:
     """Create a task with exception printing.
@@ -65,8 +64,7 @@ def create_task(
     """
     if __debug__ and LOG_TASKS:
         logger.debug(f'Creating Task "{name}".')
-    if loop is None:
-        loop = get_event_loop()
+    loop = get_event_loop()
     task = loop.create_task(coroutine, name=name)
     task.add_done_callback(
         lambda task: _task_done(task, logger, on_done, print_exceptions),

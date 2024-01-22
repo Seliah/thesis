@@ -1,4 +1,4 @@
-"""Module that implements logic to read saved data on the drive."""
+"""Module that implements logic to read motion data from the store or the drive."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
@@ -6,7 +6,7 @@ from functools import reduce
 from logging import DEBUG, basicConfig, getLogger
 from operator import add
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from numpy import load
 from rich.console import Console
@@ -15,6 +15,7 @@ from analysis import definitions, state
 from analysis.util.time import today
 
 if TYPE_CHECKING:
+    from cv2.typing import Rect
     from scipy.sparse import lil_array
 
 _logger = getLogger(__name__)
@@ -22,6 +23,7 @@ console = Console()
 
 
 def load_motions() -> definitions.MotionData:
+    """Load the motion store from disk."""
     try:
         _logger.debug(f"Loading motion data from {definitions.PATH_MOTIONS}.")
         with definitions.PATH_MOTIONS.open("rb") as f:
@@ -32,6 +34,7 @@ def load_motions() -> definitions.MotionData:
 
 
 def print_motion_frames(camera_motions: lil_array):
+    """Print non zero entries from a given motion sparse matrix."""
     cell_amount = camera_motions.shape[0]
     cells = [camera_motions.getrow(cell_index) for cell_index in range(cell_amount)]
     merged = reduce(add, cells)
@@ -40,13 +43,12 @@ def print_motion_frames(camera_motions: lil_array):
 
 
 def get_motions_in_area(
-    motions: Any,
+    motions: definitions.MotionData,
     camera_id: str,
-    cell_x: int,
-    cell_y: int,
-    cell_width: int,
-    cell_height: int,
+    bounds_rect: Rect,
 ) -> lil_array:
+    """Get all motion entries in the given cell section."""
+    [cell_x, cell_y, cell_width, cell_height] = bounds_rect
     day_id = str(datetime.now(definitions.TIMEZONE).date())
     camera_motions: lil_array = motions[day_id][camera_id]
     indices_rows = [
@@ -60,12 +62,12 @@ def get_motions_in_area(
     ]
     indices = reduce(add, indices_rows)
     rows = [camera_motions.getrow(index) for index in indices]
-    # rows = [camera_motions.getrow(index) for index in indices]
     return reduce(add, rows)
 
 
 def get_motion_data(camera_id: str):
-    day_id = str(datetime.now().date())
+    """Get all recorded motion entries for the given camera."""
+    day_id = str(datetime.now(definitions.TIMEZONE).date())
     cams = state.motions.get(day_id, None)
     if cams is None:
         console.print(f"No entries for day {day_id}")
@@ -78,6 +80,7 @@ def get_motion_data(camera_id: str):
 
 
 def calculate_heatmap(camera_id: str):
+    """Get the count of motions for every segment."""
     if (motion_data := get_motion_data(camera_id)) is None:
         return None
     cell_amount = motion_data.shape[0]
@@ -87,16 +90,17 @@ def calculate_heatmap(camera_id: str):
 
 if __name__ == "__main__":
     basicConfig(level=DEBUG)
-    # motions = get_motions_in_area("cam", 5, 3, 1, 1)
-    # for index in motions.nonzero()[1]:
-    #     print(today() + timedelta(seconds=int(index)))
     start_time = perf_counter()
+
+    # Get recorded motion data
     day_id = str(datetime.now(definitions.TIMEZONE).date())
     cams = state.motions.get(day_id, None)
     if cams is None:
         console.print(f"No entries for day {day_id}")
     nonz = {camera_id: cam for camera_id, cam in cams.items() if len(cam.nonzero()[1]) != 0}
-    for camera_id in nonz.keys():
+
+    # Print recorded motion data
+    for camera_id in nonz:
         console.print(f"{camera_id}:")
         camera_motion_data = nonz.get(camera_id, None)
         if camera_motion_data is None:
@@ -104,6 +108,8 @@ if __name__ == "__main__":
         else:
             print_motion_frames(camera_motion_data)
         console.print()
+
+    # Print execution time
     end_time = perf_counter()
     execution_time = end_time - start_time
     console.print(f"The execution time is: {execution_time}s")

@@ -36,18 +36,19 @@ def draw_grid(img: MatLike, grid_shape: tuple[int, int]):
 
     # draw vertical lines
     for x in space_x:
-        x = int(round(x))
-        cv2.line(img, (x, 0), (x, h), color=GRID_COLOR, thickness=GRID_THICKNESS)
+        x_rounded = int(round(x))
+        cv2.line(img, (x_rounded, 0), (x_rounded, h), color=GRID_COLOR, thickness=GRID_THICKNESS)
 
     # draw horizontal lines
     for y in space_y:
-        y = int(round(y))
-        cv2.line(img, (0, y), (w, y), color=GRID_COLOR, thickness=GRID_THICKNESS)
+        y_rounded = int(round(y))
+        cv2.line(img, (0, y_rounded), (w, y_rounded), color=GRID_COLOR, thickness=GRID_THICKNESS)
 
     return img
 
 
 def draw_overlay(img: MatLike, change_matrix: NDArray[Any]):
+    """Visualize motion data in segments with an overlay over the given image."""
     height_image, width_image, _ = img.shape
     height_mat, width_mat = change_matrix.shape
     cell_height = height_image // height_mat

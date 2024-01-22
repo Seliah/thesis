@@ -15,9 +15,10 @@ class _Prompt:
         self.loop.add_reader(sys.stdin, self.got_input)
 
     def got_input(self):
-        ensure_future(self.queue.put(sys.stdin.read(1)), loop=self.loop)
+        self.future = ensure_future(self.queue.put(sys.stdin.read(1)), loop=self.loop)
 
-    async def __call__(self):
+    async def __call__(self) -> str:
+        """Get the next input."""
         return (await self.queue.get()).rstrip("\n")
 
 

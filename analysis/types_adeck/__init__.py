@@ -2,10 +2,11 @@
 
 These types can be used for automatic validation, type checking, linting and intellisense in IDEs.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from logging import getLogger
-from typing import Any, List, Optional, Type, TypeVar
+from typing import Any, Mapping, TypeVar
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
@@ -19,18 +20,15 @@ class BaseType(ABC):
 
     @staticmethod
     @abstractmethod
-    def repr_raw(json: Any) -> str:
-        raise NotImplementedError
-
-    @abstractmethod
-    def __repr__(json: Any) -> str:
+    def repr_raw(json: Mapping[str, Any]) -> str:
+        """Return a lossless string representation of the data for this object."""
         raise NotImplementedError
 
 
 T = TypeVar("T", bound=BaseType)
 
 
-def parse(app_type: Type[T], json: Any) -> Optional[T]:
+def parse(app_type: type[T], json: Mapping[str, Any]) -> T | None:
     """Parse a raw json dict into a object of the given type.
 
     :return: None - Validation error occurred.
@@ -44,7 +42,7 @@ def parse(app_type: Type[T], json: Any) -> Optional[T]:
 
 
 # Type annotation is needed here as language server is confused
-def parse_all(app_type: Type[T], json: Any) -> List[T]:
+def parse_all(app_type: type[T], json: list[Mapping[str, Any]]) -> list[T]:
     """Parse a raw json array with dict entries into an array with entries of the given type.
 
     This filters out entries that had a validation error.

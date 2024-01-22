@@ -1,6 +1,6 @@
 """Module for implementing the logic to get camera information.
 
-This is done via HTTP communication with the adeck vms.
+This is done via HTTP communication with the adeck VMS.
 """
 from httpx import AsyncClient
 
@@ -12,6 +12,7 @@ client = AsyncClient(verify=C, timeout=5)
 
 
 async def get_cameras():
+    """Get all cameras from the adeck VMS."""
     result = await client.get(CAMERA_URL)
     return parse_all(Camera, result.json()["result"])
 
@@ -28,4 +29,5 @@ def get_rtsp_url(camera: Camera):
 
 
 async def get_sources():
+    """Get all cameras from the adeck VMS, mapped by their ID."""
     return {camera.uuid: get_rtsp_url(camera) for camera in await get_cameras()}

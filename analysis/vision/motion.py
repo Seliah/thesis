@@ -20,7 +20,8 @@ DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
 
 
-def get_changes(diff: MatLike, grid_size: tuple[int, int]):
+def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
+    """Get the changes represented by the given difference image in a segment matrix."""
     # Get the dimensions of the image
     height, width = diff.shape
 
@@ -52,6 +53,7 @@ def update_global_matrix(
     grid_size: tuple[int, int],
     camera_id: str,
 ):
+    """Update the global motion store with the given segment matrix."""
     non_zero = change_matrix.nonzero()
     for index, y in enumerate(non_zero[0]):
         x = non_zero[1][index]
@@ -73,16 +75,19 @@ def update_global_matrix(
 
 
 def show_two(x1: MatLike, x2: MatLike):
+    """Combine two images horizontally."""
     return np.concatenate((x1, x2), axis=1)
 
 
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
+    """Combine four images in a 2x2 grid."""
     top_row = show_two(x1, x2)
     bottom_row = show_two(x3, x4)
     return np.concatenate((top_row, bottom_row), axis=0)
 
 
 def prepare(frame: MatLike):
+    """Prepare the given image for GPU based analysis."""
     # Get UMat from Matlike to use GPU in following calulcations via OpenCL
     frame_umat = cv2.UMat(frame)  # type: ignore - this works anyways, the type definition is falsy
 
@@ -94,18 +99,20 @@ def prepare(frame: MatLike):
 
 
 def analyze_diff(original: cv2.UMat, frame: cv2.UMat, reference_frame: cv2.UMat):
+    """Get the difference of the given frame in a segment matrix."""
     # Compute the absolute difference between the current frame and the reference frame
     frame_diff = cv2.absdiff(reference_frame, frame)
     # Apply a threshold to identify regions with significant differences
     _, threshold_diff = cv2.threshold(frame_diff, 30, 255, cv2.THRESH_BINARY)
 
-    change_matrix = get_changes(threshold_diff.get(), definitions.GRID_SIZE)
+    change_matrix = _get_changes(threshold_diff.get(), definitions.GRID_SIZE)
 
     # Return the current frame as the reference frame
     return original, frame, frame_diff, change_matrix
 
 
 def visualize(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, change_matrix: NDArray[Any]):
+    """Visualize the motion analysis flow."""
     grid = draw_grid(frame.get().copy(), definitions.GRID_SIZE)
     overlayed = draw_overlay(grid, change_matrix)
 

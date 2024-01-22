@@ -1,4 +1,6 @@
 """Module that defines data for deep learning based computer vision."""
+# Disable __futures__ import hint as it makes typer unfunctional on python 3.8
+# ruff: noqa: FA100
 from enum import Enum
 from pathlib import Path
 from threading import Event
@@ -23,37 +25,41 @@ console = Console()
 app = typer.Typer()
 
 
-class Model(str, Enum):
+class _Model(str, Enum):
     ossa = "ossa"
     sku = "sku110k"
     m = "m"
 
 
-class ModelInfo(TypedDict):
+class _ModelInfo(TypedDict):
     info: str
     """A description of the given model."""
     path: Path
     """The path of the weights file."""
 
 
-models: Dict[str, ModelInfo] = {
-    Model.ossa: {
+models: Dict[str, _ModelInfo] = {
+    _Model.ossa: {
         "info": "qwer",
         "path": Path("weights/yolov8_ossa.pt"),
     },
-    Model.sku: {
+    _Model.sku: {
         "info": "asdf",
         "path": Path("weights/yolov8_sku110k.pt"),
     },
-    Model.m: {
+    _Model.m: {
         "info": "yxcv",
         "path": Path("weights/yolov8m.pt"),
     },
 }
 
 
+class _AnalysisError(Exception):
+    """Error to raise when a problem happened during analysis of an image."""
+
+
 @app.command()
-def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")]):
+def info(model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")]):
     """Print out heatmap data for a given camera."""
     model = YOLO(models[model_id]["path"])
     console.print("Classes:")
@@ -63,7 +69,7 @@ def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for 
 
 @app.command()
 def image(
-    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
+    model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")],
     path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
     labels: Annotated[bool, typer.Option(help="Whether or not to show class names.")] = False,
     conf: Annotated[Optional[float], typer.Option(help="Whether or not to show class names.")] = None,
@@ -79,7 +85,7 @@ def image(
 @app.command()
 def stream(
     source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
-    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
+    model_id: Annotated[_Model, typer.Argument(help="Which model to use for analysis.")],
     labels: Annotated[bool, typer.Argument(help="Whether or not to show class names.")] = False,
 ):
     """Analyze a given video stream."""
@@ -101,44 +107,45 @@ def shelf(
 
     This will detect missing items in img2 that were present in img1.
     """
-    model_sku = YOLO(models[Model.sku]["path"])
-    model_ossa = YOLO(models[Model.ossa]["path"])
+    model_sku = YOLO(models[_Model.sku]["path"])
+    model_ossa = YOLO(models[_Model.ossa]["path"])
 
     result_sku = cast(List[Results], model_sku.predict(path_img1))[0]
     sku_boxes = result_sku.boxes
     if sku_boxes is None:
-        raise Exception
+        raise _AnalysisError("Analysis for products failed.")
 
     result_ossa = cast(List[Results], model_ossa.predict(path_img2))[0]
     ossa_boxes = result_ossa.boxes
     if ossa_boxes is None:
-        raise Exception
+        raise _AnalysisError("Analysis for gaps failed.")
 
     overlapping = box_iou(result_ossa.boxes.xyxy, result_sku.boxes.xyxy)
     for gap_index, item_index in overlapping.nonzero():
         overlap = overlapping[gap_index, item_index]
         if overlap > overlap_threshold:
             box = cast(List[float], result_sku.boxes.xyxy[item_index].tolist())
-            rectangle(result_ossa.orig_img, get_rect_from_box(box), (0, 255, 0), 2)
+            rectangle(result_ossa.orig_img, _get_rect_from_box(box), (0, 255, 0), 2)
 
     imshow("Results", result_ossa.orig_img)
     waitKey(0)
 
 
-def get_rect_from_box(box: List[float]) -> Rect:
+def _get_rect_from_box(box: List[float]) -> Rect:
     coords = (box[0], box[1], box[2] - box[0], box[3] - box[1])
     return [int(coord) for coord in coords]
 
 
 @app.command()
 def cropped(
-    path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
+    path: Annotated[Path, typer.Argument(help="The path of the to be cropped image.")],
 ):
+    """Show the given image in a cropped representation, which will be used for analysis."""
     img = imread(str(path))
     # 3
     points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
     # 2
-    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
+    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))  # noqa: ERA001
     image_warped = warp(img, points)
     imshow("Cropped", image_warped)
     waitKey(0)
@@ -148,13 +155,11 @@ def cropped(
 def shelf_stream(
     source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
 ):
-    # 3
+    """Analyze a video stream with shelf monitoring."""
     points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
-    # 2
-    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))
     cap = VideoCapture(source)
-    model_sku = YOLO(models[Model.sku]["path"])
-    model_ossa = YOLO(models[Model.ossa]["path"])
+    model_sku = YOLO(models[_Model.sku]["path"])
+    model_ossa = YOLO(models[_Model.ossa]["path"])
 
     from_capture(cap, Event()).pipe(
         throttle_first(1 / 2),
@@ -167,7 +172,7 @@ def shelf_stream(
     # ).subscribe(lambda images: show(cap, images[1][0].plot()))
 
 
-def show(cap: VideoCapture, image: MatLike):
+def _show(cap: VideoCapture, image: MatLike):
     imshow("Video", image)
     if waitKey(1) == ord("q"):
         cap.release()
