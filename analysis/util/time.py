@@ -15,5 +15,5 @@ def today():
 
 
 def seconds_since_midnight(time: datetime):
-    """See https://stackoverflow.com/questions/15971308/get-seconds-since-midnight-in-python"""
+    """See https://stackoverflow.com/questions/15971308/get-seconds-since-midnight-in-python."""
     return int((time - get_date_floored(time)).seconds)

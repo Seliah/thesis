@@ -9,7 +9,7 @@ from asyncio import AbstractEventLoop, Queue, ensure_future, get_event_loop
 
 
 class _Prompt:
-    def __init__(self, loop: AbstractEventLoop | None = None):
+    def __init__(self, loop: AbstractEventLoop | None = None) -> None:
         self.loop = loop or get_event_loop()
         self.queue: Queue[str] = Queue()
         self.loop.add_reader(sys.stdin, self.got_input)

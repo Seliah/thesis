@@ -6,15 +6,19 @@ from functools import reduce
 from logging import DEBUG, basicConfig, getLogger
 from operator import add
 from time import perf_counter
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from numpy import load
-from scipy.sparse import lil_array
+from rich.console import Console
 
 from analysis import definitions, state
 from analysis.util.time import today
 
+if TYPE_CHECKING:
+    from scipy.sparse import lil_array
+
 _logger = getLogger(__name__)
+console = Console()
 
 
 def load_motions() -> definitions.MotionData:
@@ -32,7 +36,7 @@ def print_motion_frames(camera_motions: lil_array):
     cells = [camera_motions.getrow(cell_index) for cell_index in range(cell_amount)]
     merged = reduce(add, cells)
     for index in merged.nonzero()[1]:
-        print(today() + timedelta(seconds=int(index)))
+        console.print(today() + timedelta(seconds=int(index)))
 
 
 def get_motions_in_area(
@@ -64,11 +68,11 @@ def get_motion_data(camera_id: str):
     day_id = str(datetime.now().date())
     cams = state.motions.get(day_id, None)
     if cams is None:
-        print(f"No entries for day {day_id}")
+        console.print(f"No entries for day {day_id}")
         return None
     camera_motion_data = cams.get(camera_id, None)
     if camera_motion_data is None:
-        print(f'No entries for source "{camera_id}"')
+        console.print(f'No entries for source "{camera_id}"')
         return None
     return camera_motion_data
 
@@ -90,16 +94,16 @@ if __name__ == "__main__":
     day_id = str(datetime.now(definitions.TIMEZONE).date())
     cams = state.motions.get(day_id, None)
     if cams is None:
-        print(f"No entries for day {day_id}")
+        console.print(f"No entries for day {day_id}")
     nonz = {camera_id: cam for camera_id, cam in cams.items() if len(cam.nonzero()[1]) != 0}
     for camera_id in nonz.keys():
-        print(f"{camera_id}:")
+        console.print(f"{camera_id}:")
         camera_motion_data = nonz.get(camera_id, None)
         if camera_motion_data is None:
-            print("No entries")
+            console.print("No entries")
         else:
             print_motion_frames(camera_motion_data)
-        print()
+        console.print()
     end_time = perf_counter()
     execution_time = end_time - start_time
-    print(f"The execution time is: {execution_time}s")
+    console.print(f"The execution time is: {execution_time}s")

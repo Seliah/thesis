@@ -4,13 +4,15 @@ This can for example be functions for visualizations or other image edits/analys
 """
 from __future__ import annotations
 
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 import cv2
-from cv2.typing import MatLike
 from numpy import array, linspace
-from numpy.typing import NDArray
 from scipy.spatial.distance import euclidean
+
+if TYPE_CHECKING:
+    from cv2.typing import MatLike
+    from numpy.typing import NDArray
 
 Point = Tuple[float, float]
 RectPoints = Tuple[Point, Point, Point, Point]
