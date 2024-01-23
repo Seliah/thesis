@@ -1,3 +1,19 @@
 {
-  "python.analysis.typeCheckingMode": "strict"
+  // Use pyright as a type checker
+  "python.languageServer": "Pylance",
+  // Ensure correct type usage
+  "python.analysis.typeCheckingMode": "strict",
+  // Infer library types from sources, when definitions are not present
+  "python.analysis.useLibraryCodeForTypes": true,
+  // Dev comfort
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.autoFormatStrings": true,
+  // Analyze the whole project instead of single files
+  "python.analysis.diagnosticMode": "workspace",
+  // Edit specific checking rules
+  "python.analysis.diagnosticSeverityOverrides": {
+    // Do not report missing stubs as types are inferred in this case
+    // Writing stubs is not worth the time as a part of this project
+    "reportMissingTypeStubs": "none"
+  }
 }
