@@ -9,7 +9,6 @@ from typing import TypedDict
 
 import rich
 import typer
-from roboflow import Roboflow
 
 from user_secrets import API_KEY
 
@@ -18,7 +17,7 @@ console = rich.console.Console()
 FORMAT = "yolov8"
 
 
-class _DatasetID(str, Enum):
+class DatasetID(str, Enum):
     """Names of known datasets."""
 
     ossa = "ossa"
@@ -31,13 +30,13 @@ class _DatasetInfo(TypedDict):
     version: int
 
 
-datasets: dict[_DatasetID, _DatasetInfo] = {
-    _DatasetID.ossa: {
+datasets: dict[DatasetID, _DatasetInfo] = {
+    DatasetID.ossa: {
         "workspace": "fyp-ormnr",
         "project": "on-shelf-stock-availability-ox04t",
         "version": 5,
     },
-    _DatasetID.sku: {
+    DatasetID.sku: {
         "workspace": "jacobs-workspace",
         "project": "sku-110k",
         "version": 4,
@@ -49,7 +48,10 @@ This dict can be appended with new datasets to make them downloadable.
 """
 
 
-def download(dataset_id: _DatasetID):
+def download(dataset_id: DatasetID):
+    """Script to download a given known dataset."""
+    from roboflow import Roboflow
+
     dataset = datasets[dataset_id]
     workspace = Roboflow(api_key=API_KEY).workspace(dataset["workspace"])
     project = workspace.project(dataset["project"])
