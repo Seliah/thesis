@@ -4,7 +4,7 @@ This can be used for trying out functionality or hardware, programming or debugg
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
-from logging import DEBUG, basicConfig, getLogger
+from logging import getLogger
 from typing import Optional
 
 import cv2
@@ -23,7 +23,6 @@ from analysis.vision.motion_search import cli as motion_cli
 from analysis.vision.shelf_monitoring import cli as shelf_cli
 from user_secrets import URL
 
-basicConfig(level=DEBUG)
 _logger = getLogger()
 console = Console()
 

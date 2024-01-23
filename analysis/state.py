@@ -7,7 +7,7 @@ See :module:`definitions` for constant variables.
 from __future__ import annotations
 
 from asyncio import Event
-from logging import getLogger
+from logging import DEBUG, basicConfig, getLogger
 from typing import TYPE_CHECKING
 
 from analysis.read import load_motions
@@ -15,7 +15,9 @@ from analysis.read import load_motions
 if TYPE_CHECKING:
     from analysis.definitions import MotionData
 
-_logger = getLogger(__name__)
+basicConfig(level=DEBUG)
+_logger = getLogger()
+_logger.debug("Logging set up.")
 _logger.debug("Loading state.")
 
 terminating = Event()
