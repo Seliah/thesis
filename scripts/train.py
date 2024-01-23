@@ -21,7 +21,7 @@ def train(dataset_id: DatasetID):
 
     # Do the actual training
     dataset = datasets[dataset_id]
-    model.train(data=f"datasets/{dataset['project']}/data.yaml", epochs=150, imgsz=416, workers=cpu_count())
+    model.train(data=f"datasets/{dataset['project']}/data.yaml", epochs=150, imgsz=416, workers=cpu_count())  # pyright: ignore[reportUnknownMemberType]
 
 
 if __name__ == "__main__":

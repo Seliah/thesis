@@ -9,7 +9,6 @@ import cv2
 import numpy as np
 from reactivex.operators import do_action, pairwise, throttle_first
 from reactivex.operators import map as map_op
-from reactivex.subject import Subject
 from scipy.sparse import lil_array
 
 from analysis import definitions, state
@@ -19,6 +18,7 @@ from analysis.util.time import seconds_since_midnight
 if TYPE_CHECKING:
     from cv2.typing import MatLike
     from numpy.typing import NDArray
+    from reactivex.subject import Subject
 
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
@@ -50,13 +50,14 @@ def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
                 x * cell_width : (x + 1) * cell_width,
             ]
             # Check if the cell contains any non-zero values
-            if has_values := np.any(cell != 0):
+            if has_values := np.any(cell != 0):  # pyright: ignore[reportUnknownMemberType]
                 # Update the boolean matrix
                 boolean_matrix[y, x] = has_values
     return boolean_matrix
 
 
 def analyze_motion(frames: Subject[MatLike], show: bool):
+    """Analyze frames from given observable for motion."""
     return frames.pipe(
         # Apply FPS
         throttle_first(TIME_PER_FRAME),
@@ -99,14 +100,14 @@ def update_global_matrix(
 
 def show_two(x1: MatLike, x2: MatLike):
     """Combine two images horizontally."""
-    return np.concatenate((x1, x2), axis=1)
+    return np.concatenate((x1, x2), axis=1)  # pyright: ignore[reportUnknownMemberType]
 
 
 def show_four(x1: MatLike, x2: MatLike, x3: MatLike, x4: MatLike):
     """Combine four images in a 2x2 grid."""
     top_row = show_two(x1, x2)
     bottom_row = show_two(x3, x4)
-    return np.concatenate((top_row, bottom_row), axis=0)
+    return np.concatenate((top_row, bottom_row), axis=0)  # pyright: ignore[reportUnknownMemberType]
 
 
 def prepare(frame: MatLike):
@@ -153,5 +154,5 @@ def visualize(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, cha
 def write_motion():
     """Write motion data from local state to disk."""
     with definitions.PATH_MOTIONS.open("wb") as f:
-        np.save(f, np.asanyarray(state.motions))
+        np.save(f, np.asanyarray(state.motions))  # pyright: ignore[reportUnknownMemberType]
         _logger.info("Wrote motion analysis results to disk.")

@@ -1,7 +1,10 @@
+"""Module for top level analysis functionality.
+
+This module implements logic for analyzing multiple sources in parallel on multiple processes and threads.
+"""
 from __future__ import annotations
 
 import signal
-import threading
 from asyncio import gather, get_event_loop, wait_for
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from logging import getLogger
@@ -20,6 +23,7 @@ from analysis.util.tasks import create_task
 from analysis.vision.analyses import Analysis, analyses
 
 if TYPE_CHECKING:
+    import threading
     from multiprocessing.connection import Connection
 
 loop = get_event_loop()

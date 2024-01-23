@@ -1,20 +1,20 @@
-"""Module for definition of motion_search debug cli.
+"""Module for definition of shelf monitoring debug cli.
 
 See __main__ for application.
 
 You will see that import are done in many commands.
 These imports take a while and are therefore "lazy loaded" like this.
 They are only imported, when they are actually needed inside a command.
+
+The prdictions may be improved further by tweaking args like conf, iou or agnostic_nms.
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
 from pathlib import Path
 from threading import Event
-from typing import List, Optional, cast
 
 import typer
 from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
-from cv2.typing import Rect
 from reactivex import operators as ops
 from reactivex.operators import map as map_op
 from reactivex.operators import throttle_first
@@ -23,6 +23,7 @@ from typing_extensions import Annotated
 
 from analysis.util.image import warp
 from analysis.util.rx import from_capture
+from analysis.util.yolov8 import get_rect_from_box
 from analysis.vision.shelf_monitoring.models import Model, models
 
 console = Console()
@@ -41,24 +42,25 @@ def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for 
     model = YOLO(models[model_id]["path"])
     console.print("Classes:")
     console.print(models[model_id]["info"])
-    console.print(model.names)
+    console.print(model.names)  # pyright: ignore[reportUnknownMemberType]
 
 
 @app.command()
 def image(
     model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
     path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
-    labels: Annotated[bool, typer.Option(help="Whether or not to show class names.")] = False,
-    conf: Annotated[Optional[float], typer.Option(help="Whether or not to show class names.")] = None,
+    labels: Annotated[bool, typer.Option(help="Whether to show class names or not.")] = False,
+    conf: Annotated[float, typer.Option(help="Whether to show class names or not.")] = 0.25,
 ):
     """Analyze a given image."""
     from ultralytics import YOLO
-    from ultralytics.engine.results import Results
+
+    from analysis.util.yolov8 import plot, predict
 
     model = YOLO(models[model_id]["path"])
-    results = cast(List[Results], model.predict(path, conf=conf))
+    results = predict(model, path, conf=conf)
     for result in results:
-        imshow("Results", result.plot(labels=labels, line_width=2))
+        imshow("Results", plot(result, labels=labels, line_width=2))
         waitKey(0)
 
 
@@ -71,11 +73,12 @@ def stream(
     """Analyze a given video stream."""
     from ultralytics import YOLO
 
+    from analysis.util.yolov8 import plot, predict
+
     model = YOLO(models[model_id]["path"])
     # for result in model.predict(source, stream=True):
-    for result in model.predict(source, stream=True, classes=[0]):
-        plotted = result.plot(labels=labels, line_width=2)
-        imshow("Results", resize(plotted, (1440, 810)))
+    for result in predict(model, source, stream=True, classes=[0]):
+        imshow("Results", resize(plot(result, labels=labels, line_width=2), (1440, 810)))
         waitKey(1)
 
 
@@ -89,37 +92,32 @@ def shelf(
 
     This will detect missing items in img2 that were present in img1.
     """
-    from torchvision.ops import box_iou
     from ultralytics import YOLO
-    from ultralytics.engine.results import Results
+
+    from analysis.util.yolov8 import compare_results, predict
 
     model_sku = YOLO(models[Model.sku]["path"])
     model_ossa = YOLO(models[Model.ossa]["path"])
 
-    result_sku = cast(List[Results], model_sku.predict(path_img1))[0]
+    result_sku = predict(model_sku, path_img1)[0]
     sku_boxes = result_sku.boxes
     if sku_boxes is None:
         raise _AnalysisError("Analysis for products failed.")
 
-    result_ossa = cast(List[Results], model_ossa.predict(path_img2))[0]
+    result_ossa = predict(model_ossa, path_img2)[0]
     ossa_boxes = result_ossa.boxes
     if ossa_boxes is None:
         raise _AnalysisError("Analysis for gaps failed.")
 
-    overlapping = box_iou(result_ossa.boxes.xyxy, result_sku.boxes.xyxy)
+    overlapping = compare_results(ossa_boxes, sku_boxes)
     for gap_index, item_index in overlapping.nonzero():
         overlap = overlapping[gap_index, item_index]
         if overlap > overlap_threshold:
-            box = cast(List[float], result_sku.boxes.xyxy[item_index].tolist())
-            rectangle(result_ossa.orig_img, _get_rect_from_box(box), (0, 255, 0), 2)
+            box = sku_boxes.xyxy[item_index]  # pyright: ignore[reportUnknownMemberType]
+            rectangle(result_ossa.orig_img, get_rect_from_box(box), (0, 255, 0), 2)
 
     imshow("Results", result_ossa.orig_img)
     waitKey(0)
-
-
-def _get_rect_from_box(box: List[float]) -> Rect:
-    coords = (box[0], box[1], box[2] - box[0], box[3] - box[1])
-    return [int(coord) for coord in coords]
 
 
 @app.command()

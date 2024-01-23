@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 
 import cv2
 from numpy import array, linspace
-from scipy.spatial.distance import euclidean
+from scipy.spatial.distance import euclidean  # pyright: ignore[reportUnknownVariableType]
 
 if TYPE_CHECKING:
     from cv2.typing import MatLike
@@ -93,11 +93,11 @@ def warp(image: MatLike, points: RectPoints):
 def _get_max_size(points: RectPoints):
     (top_left, top_right, bottom_right, bottom_left) = points
     # See https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.euclidean.html#scipy.spatial.distance.euclidean
-    width_top = euclidean(top_left, top_right)
-    width_bottom = euclidean(bottom_left, bottom_right)
+    width_top = euclidean(list(top_left), list(top_right))
+    width_bottom = euclidean(list(bottom_left), list(bottom_right))
     width_max = max(int(width_top), int(width_bottom))
-    height_left = euclidean(top_left, bottom_left)
-    height_right = euclidean(top_right, bottom_right)
+    height_left = euclidean(list(top_left), list(bottom_left))
+    height_right = euclidean(list(top_right), list(bottom_right))
     height_max = max(int(height_left), int(height_right))
     return width_max, height_max
 

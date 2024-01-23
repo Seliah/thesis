@@ -7,7 +7,7 @@ from typing import TypedDict
 
 
 class Model(str, Enum):
-    """Names of available cv models."""
+    """Names of available CV models."""
 
     ossa = "ossa"
     sku = "sku110k"
@@ -25,7 +25,7 @@ class _ModelInfo(TypedDict):
     """The path of the weights file."""
 
 
-models: dict[str, _ModelInfo] = {
+models: dict[Model, _ModelInfo] = {
     Model.ossa: {
         "info": "qwer",
         "path": Path("weights/yolov8_ossa.pt"),
