@@ -11,7 +11,7 @@ import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
-from analysis.vision.motion_search.read import calculate_heatmap, get_motion_data, print_motion_frames
+from analysis.vision.motion_search.read import calculate_heatmap, get_cameras, get_motion_data, print_motion_frames
 from user_secrets import URL
 
 basicConfig(level=DEBUG)
@@ -39,3 +39,13 @@ def heatmap(
     if source is None:
         source = URL
     console.print(calculate_heatmap(source))
+
+
+@app.command()
+def cameras():
+    """Print out cameras with motion data."""
+    cams = get_cameras()
+    if cams is None:
+        console.print("No cameras for today.")
+        return
+    console.print(get_cameras())

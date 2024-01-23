@@ -14,7 +14,7 @@ from typing import List, Optional, cast
 
 import typer
 from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
-from cv2.typing import MatLike, Rect
+from cv2.typing import Rect
 from reactivex import operators as ops
 from reactivex.operators import map as map_op
 from reactivex.operators import throttle_first
@@ -158,12 +158,6 @@ def shelf_stream(
         # pairwise(),
     ).subscribe()
     # ).subscribe(lambda images: show(cap, images[1][0].plot()))
-
-
-def _show(cap: VideoCapture, image: MatLike):
-    imshow("Video", image)
-    if waitKey(1) == ord("q"):
-        cap.release()
 
 
 if __name__ == "__main__":

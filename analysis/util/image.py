@@ -100,3 +100,11 @@ def _get_max_size(points: RectPoints):
     height_right = euclidean(top_right, bottom_right)
     height_max = max(int(height_left), int(height_right))
     return width_max, height_max
+
+
+def show(cap: cv2.VideoCapture, image: MatLike):
+    """Just show an image."""
+    cv2.imshow("Video", image)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        # if cv2.waitKey(1) & 0xFF:
+        cap.release()

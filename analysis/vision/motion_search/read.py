@@ -52,6 +52,12 @@ def get_motions_in_area(
     return reduce(add, rows)
 
 
+def get_cameras():
+    day_id = str(datetime.now(definitions.TIMEZONE).date())
+    cams = state.motions.get(day_id, None)
+    return cams.keys() if cams is not None else None
+
+
 def get_motion_data(camera_id: str):
     """Get all recorded motion entries for the given camera."""
     day_id = str(datetime.now(definitions.TIMEZONE).date())

@@ -79,12 +79,13 @@ def view(
             source = URL
         cap = cv2.VideoCapture(source)
     while True:
-        _, image = cap.read()
+        success, image = cap.read()
+        if not success:
+            console.print("The stream is not returning any valid data.")
+            break
         if grid:
             image = draw_grid(image, GRID_SIZE)
-        cv2.imshow("Video", image)
-        if cv2.waitKey(1) == ord("q"):
-            break
+        show(cap, image)
 
 
 if __name__ == "__main__":

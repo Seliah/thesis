@@ -10,7 +10,7 @@ TIME_ZERO = datetime.min.time()
 
 def get_date_floored(time: datetime):
     """Get the date of the given datetime at 00:00."""
-    return datetime.combine(time.date(), TIME_ZERO)
+    return datetime.combine(time.date(), TIME_ZERO).replace(tzinfo=TIMEZONE)
 
 
 def today():
