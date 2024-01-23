@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 
 from cv2 import VideoCapture
 from cv2.typing import MatLike
-from numpy import asanyarray, save
 from reactivex import merge
 from reactivex import operators as ops
 from reactivex.subject import Subject
@@ -18,8 +17,7 @@ from reactivex.subject import Subject
 from analysis import definitions, state
 from analysis.util.rx import from_capture
 from analysis.util.tasks import create_task
-from analysis.vision import analyses
-from analysis.vision.analyses import Analysis
+from analysis.vision.analyses import Analysis, analyses
 
 if TYPE_CHECKING:
     from multiprocessing.connection import Connection
@@ -59,7 +57,10 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         process_executor.shutdown(wait=False, cancel_futures=True)
         await gather(*tasks)
     _logger.info("All analysis processes terminated.")
-    _write_motion()
+    # Run all on_termination callbacks defined by the analyses
+    callbacks = [callback for analysis in analyses.values() if (callback := analysis.on_termination) is not None]
+    for termination_callback in callbacks:
+        termination_callback()
 
 
 async def _analyze_source(source: str, source_id: str, visualize: bool, event: threading.Event):
@@ -75,7 +76,7 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
         source,
         visualize,
         event,
-        analyses.analyses,
+        analyses,
         input_connection,
     )
     create_task(wait_for(capture_future, timeout=None), "Subprocess handler task", _logger)
@@ -140,11 +141,4 @@ def _parse(output_connection: Connection, camera_id: str):
         if output_connection.poll(1):
             output: tuple[str, Any] = output_connection.recv()
             [name, result] = output
-            analyses.analyses[name].parse(result, camera_id)
-
-
-def _write_motion():
-    """Write motion data from local state to disk."""
-    with definitions.PATH_MOTIONS.open("wb") as f:
-        save(f, asanyarray(state.motions))
-        _logger.info("Wrote motion analysis results to disk.")
+            analyses[name].parse(result, camera_id)

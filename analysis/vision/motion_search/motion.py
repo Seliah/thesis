@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 import cv2
@@ -24,6 +25,8 @@ TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
 
 FPS = 5
 TIME_PER_FRAME = 1 / FPS
+
+_logger = getLogger(__name__)
 
 
 def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
@@ -145,3 +148,10 @@ def visualize(frame: cv2.UMat, gray_blurred: cv2.UMat, frame_diff: cv2.UMat, cha
     )
     cv2.imshow("Motion Detection", cv2.resize(merged, (1600, 900)))
     cv2.waitKey(1)
+
+
+def write_motion():
+    """Write motion data from local state to disk."""
+    with definitions.PATH_MOTIONS.open("wb") as f:
+        np.save(f, np.asanyarray(state.motions))
+        _logger.info("Wrote motion analysis results to disk.")
