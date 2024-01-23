@@ -1,3 +1,4 @@
+"""Module for definition of useable deep learning models."""
 from __future__ import annotations
 
 from enum import Enum
