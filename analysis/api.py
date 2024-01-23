@@ -32,8 +32,7 @@ async def _main(_: FastAPI):
     # Wait for program termination command
     yield
     _logger.info("Terminating analysis.")
-    state.terminating = True
-    state.termination_event.set()
+    state.terminating.set()
     await task
 
 

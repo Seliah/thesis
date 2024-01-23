@@ -8,14 +8,14 @@ from logging import DEBUG, basicConfig, getLogger
 from typing import Optional
 
 import cv2
-import state
 import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
+from analysis import state
 from analysis.camera_info import get_sources
 from analysis.definitions import GRID_SIZE
-from analysis.util.image import draw_grid
+from analysis.util.image import draw_grid, show
 from analysis.util.input import prompt
 from analysis.util.tasks import create_task, typer_async
 from analysis.vision.capture import analyze_sources
@@ -36,8 +36,7 @@ async def _exit_on_input():
     _logger.info("Running")
     await prompt()
     _logger.info("Got input, exiting...")
-    state.terminating = True
-    state.termination_event.set()
+    state.terminating.set()
 
 
 @app.command()

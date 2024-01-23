@@ -6,9 +6,12 @@ from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
+from reactivex.operators import do_action, pairwise, throttle_first
+from reactivex.operators import map as map_op
+from reactivex.subject import Subject
 from scipy.sparse import lil_array
 
-from analysis import definitions
+from analysis import definitions, state
 from analysis.util.image import draw_grid, draw_overlay
 from analysis.util.time import seconds_since_midnight
 
@@ -18,6 +21,9 @@ if TYPE_CHECKING:
 
 DAY_IN_SECONDS = int(timedelta(days=1).total_seconds())
 TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
+
+FPS = 5
+TIME_PER_FRAME = 1 / FPS
 
 
 def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
@@ -47,10 +53,23 @@ def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
     return boolean_matrix
 
 
+def analyze_motion(frames: Subject[MatLike], show: bool):
+    return frames.pipe(
+        # Apply FPS
+        throttle_first(TIME_PER_FRAME),
+        # Apply image preparation for analysis
+        map_op(prepare),
+        # Keep the previous frame for diff
+        pairwise(),
+        map_op(lambda pair: analyze_diff(pair[1][0], pair[1][1], pair[0][1])),
+        # Display
+        do_action(lambda t: visualize(t[0], t[1], t[2], t[3]) if show else None),
+        map_op(lambda t: t[3]),
+    )
+
+
 def update_global_matrix(
-    motions: definitions.MotionData,
     change_matrix: NDArray[Any],
-    grid_size: tuple[int, int],
     camera_id: str,
 ):
     """Update the global motion store with the given segment matrix."""
@@ -58,13 +77,14 @@ def update_global_matrix(
     for index, y in enumerate(non_zero[0]):
         x = non_zero[1][index]
         # Update the global matrix
-        index_cell = y * grid_size[1] + x
-        index_time = int(seconds_since_midnight(datetime.now(definitions.TIMEZONE)) / definitions.INTERVAL)
+        index_cell = y * definitions.GRID_SIZE[1] + x
+        seconds = seconds_since_midnight(datetime.now(definitions.TIMEZONE))
+        index_time = int(seconds / definitions.INTERVAL)
 
         id_day = str(datetime.now(definitions.TIMEZONE).date())
-        if id_day not in motions:
-            motions[id_day] = {}
-        day = motions[id_day]
+        if id_day not in state.motions:
+            state.motions[id_day] = {}
+        day = state.motions[id_day]
 
         id_cam = camera_id
         if id_cam not in day:
