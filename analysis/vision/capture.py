@@ -45,7 +45,7 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         event = manager.Event()
         tasks = [
             create_task(
-                analyze_source(source, source_id, source_id == display, event),
+                _analyze_source(source, source_id, source_id == display, event),
                 source_id,
                 _logger,
             )
@@ -59,15 +59,19 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         process_executor.shutdown(wait=False, cancel_futures=True)
         await gather(*tasks)
     _logger.info("All analysis processes terminated.")
-    write_data()
+    _write_motion()
 
 
-async def analyze_source(source: str, source_id: str, visualize: bool, event: threading.Event):
+async def _analyze_source(source: str, source_id: str, visualize: bool, event: threading.Event):
+    """Analyze the given source.
+
+    This will start a analysis process and a result parsing thread using the module level executors.
+    """
     output_connection, input_connection = Pipe()
     # Run capture in multiple processes in background (via asyncio task)
     capture_future = loop.run_in_executor(
         process_executor,
-        capture_sync,
+        _capture,
         source,
         visualize,
         event,
@@ -78,43 +82,60 @@ async def analyze_source(source: str, source_id: str, visualize: bool, event: th
     # Run parsing in multiple threads in foreground
     await loop.run_in_executor(
         thread_executor,
-        parse_results_sync,
+        _parse,
         output_connection,
         source_id,
     )
 
 
-def capture_sync(
+def _capture(
     source: str,
     visualize: bool,
     termination_event: threading.Event,
     analyses: dict[str, Analysis[Any]],
     conn: Connection,
 ):
+    """Capture video feed for given source and run all given analyses on it.
+
+    This will set up only one input to minimize the I/O usage for camera and this machine.
+    Analysis results are all send over the given connection with an analysis identifier prefix to enable parsing.
+    """
     if not definitions.IS_SERVICE:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    get_merged_output(frames, analyses, visualize).subscribe(conn.send)
+    _get_merged_output(frames, analyses, visualize).subscribe(conn.send)
 
     capture_stream = from_capture(VideoCapture(source), termination_event)
     capture_stream.subscribe(frames)
 
 
-def get_merged_output(frames: Subject[MatLike], analyses: dict[str, Analysis[Any]], visualize: bool):
-    output_streams = [get_output_stream(frames, analysis, name, visualize) for name, analysis in analyses.items()]
+def _get_merged_output(frames: Subject[MatLike], analyses: dict[str, Analysis[Any]], visualize: bool):
+    """Create observalbe that combines all analyses.
+
+    This uses the analysis observable that is defined for each analysis and RxPY merge.
+    """
+    output_streams = [_get_output_stream(frames, analysis, name, visualize) for name, analysis in analyses.items()]
     return merge(*output_streams)
 
 
-def get_output_stream(frames: Subject[MatLike], analysis: Analysis[Any], analysis_name: str, visualize: bool):
+def _get_output_stream(frames: Subject[MatLike], analysis: Analysis[Any], analysis_name: str, visualize: bool):
+    """Get the analysis result observable defined by the analysis.
+
+    This will also prefix the results with the analysis ID.
+    """
     return analysis.analyze(frames, visualize).pipe(
         ops.map(lambda result: (analysis_name, result)),
     )
 
 
-def parse_results_sync(output_connection: Connection, camera_id: str):
+def _parse(output_connection: Connection, camera_id: str):
+    """Parse the analysis results, send over the given connection.
+
+    This can be used to combine all data in a single heap to make it usable by an API or writing process.
+    """
     while not state.terminating.is_set():
         if output_connection.poll(1):
             output: tuple[str, Any] = output_connection.recv()
@@ -122,7 +143,8 @@ def parse_results_sync(output_connection: Connection, camera_id: str):
             analyses.analyses[name].parse(result, camera_id)
 
 
-def write_data():
+def _write_motion():
+    """Write motion data from local state to disk."""
     with definitions.PATH_MOTIONS.open("wb") as f:
         save(f, asanyarray(state.motions))
-        _logger.info("Wrote analysis results to disk.")
+        _logger.info("Wrote motion analysis results to disk.")
