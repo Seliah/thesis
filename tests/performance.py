@@ -1,3 +1,4 @@
+"""Module for trying out the performance of YOLOv8."""
 from cv2 import imshow, waitKey
 from ultralytics import YOLO
 

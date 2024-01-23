@@ -10,7 +10,6 @@ from time import perf_counter
 from typing import TYPE_CHECKING
 
 from rich.console import Console
-from scipy.sparse import lil_array
 
 from analysis import definitions, state
 from analysis.util.scipy import combine_or, getrow, nnz, nonzero
@@ -18,6 +17,7 @@ from analysis.util.time import today
 
 if TYPE_CHECKING:
     from cv2.typing import Rect
+    from scipy.sparse import lil_array
 
 console = Console()
 
@@ -55,6 +55,7 @@ def get_motions_in_area(
 
 
 def get_cameras():
+    """Get all camera motion data collections that actually have nonzero data."""
     day_id = str(datetime.now(definitions.TIMEZONE).date())
     cams = state.motions.get(day_id, None)
     return cams.keys() if cams is not None else None
