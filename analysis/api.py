@@ -16,6 +16,7 @@ from numpy.typing import NDArray
 
 from analysis import definitions, state
 from analysis.camera_info import get_sources
+from analysis.read import load_motions
 from analysis.util.tasks import create_task
 from analysis.vision.capture import analyze_sources
 from analysis.vision.motion_search.read import calculate_heatmap, get_motions_in_area
@@ -26,6 +27,7 @@ _logger = getLogger(__name__)
 
 @asynccontextmanager
 async def _main(_: FastAPI):
+    state.motions = load_motions()
     _logger.info("Starting analysis.")
     sources = await get_sources()
     task = create_task(analyze_sources(sources), "Capture main task", _logger)

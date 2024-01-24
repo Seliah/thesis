@@ -15,6 +15,7 @@ from typing_extensions import Annotated
 from analysis import state
 from analysis.camera_info import get_sources
 from analysis.definitions import GRID_SIZE
+from analysis.read import load_motions
 from analysis.util.image import draw_grid, show
 from analysis.util.input import prompt
 from analysis.util.tasks import create_task, typer_async
@@ -88,4 +89,5 @@ def view(
 
 
 if __name__ == "__main__":
+    state.motions = load_motions()
     app()

@@ -4,7 +4,6 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta
 from functools import reduce
-from logging import DEBUG, basicConfig
 from operator import add
 from time import perf_counter
 from typing import TYPE_CHECKING
@@ -12,6 +11,7 @@ from typing import TYPE_CHECKING
 from rich.console import Console
 
 from analysis import definitions, state
+from analysis.read import load_motions
 from analysis.util.scipy import combine_or, getrow, nnz, nonzero
 from analysis.util.time import today
 
@@ -85,7 +85,7 @@ def calculate_heatmap(camera_id: str):
 
 
 if __name__ == "__main__":
-    basicConfig(level=DEBUG)
+    state.motions = load_motions()
     start_time = perf_counter()
     # Get recorded motion data
     day_id = str(datetime.now(definitions.TIMEZONE).date())

@@ -10,17 +10,14 @@ from asyncio import Event
 from logging import DEBUG, basicConfig, getLogger
 from typing import TYPE_CHECKING
 
-from analysis.read import load_motions
-
 if TYPE_CHECKING:
     from analysis.definitions import MotionData
 
 basicConfig(level=DEBUG)
 _logger = getLogger()
 _logger.debug("Logging set up.")
-_logger.debug("Loading state.")
 
 terminating = Event()
 """Flag to quit long running processes."""
 
-motions: MotionData = load_motions()
+motions: MotionData = {}
