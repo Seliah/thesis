@@ -10,6 +10,9 @@ weights
 # Tests
 *.npy
 
+# Offline deployment
+requirements/
+
 # Automatically created ignores follow:
 
 # Created by https://www.toptal.com/developers/gitignore/api/python

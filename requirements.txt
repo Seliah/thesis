@@ -31,3 +31,6 @@ typer[all]
 ## Dev Tools
 # Linter for preventing runtime issues
 ruff
+# Dep building (needed for remote deployment when building is needed)
+# See https://stackoverflow.com/questions/34819221/why-is-python-setup-py-saying-invalid-command-bdist-wheel-on-travis-ci
+wheel
