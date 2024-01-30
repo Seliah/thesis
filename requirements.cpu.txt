@@ -1,3 +1,6 @@
+# Requirements for executing deep learning CV on the CPU
+# See ./README.md#requirements
+
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 torchvision

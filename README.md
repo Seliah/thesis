@@ -1,12 +1,22 @@
 # Thesis Elias Zielke
 
+## Introduction
+
+The contents of this repository are the product of Elias Zielke's master's thesis: "Computer vision in retail: automated data analysis based on a video surveillance system".
+
+All source and test files that were created as part of the thesis are collected here. Furthermore, all project configuration files and requirements can be found here.
+
 ## Structure
 
-This project is structered in the "flat layout" style, described by the official packaging documentation: <https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/>
+This project is structered in the "flat layout" style, described by the official packaging documentation: <https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/>.
+
+Every file in this repository is documented right at the beginning. Every folder is documented with either a README.md or an __init__.py (for python source code) or both, describing the content of the file/folder.
 
 ## Installation
 
-### Dev Environment
+### Requirements
+
+This project uses publicly available third party libraries for Python, called "modules". These modules must be installed in order to provide all needed funccionality, for example from [PyPI](https://pypi.org) using *pip*. How that can be done specifically for this project is described in this part.
 
 Firstly, setup a virtual environment and activate it:
 
@@ -31,7 +41,7 @@ Now the actual install can be done (CPU was picked in this example):
 pip install -r requirements.cpu.txt -r requirements.txt
 ```
 
-The Hardware-specific requirements file has to be used **before** the other requirements file.
+The Hardware-specific requirements file has to be used __before__ the other requirements file.
 
 For additional information for this step, see PyTorch installation page: <https://pytorch.org/get-started/locally/>
 

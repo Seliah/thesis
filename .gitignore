@@ -1,3 +1,7 @@
+# Configuration for to be ignored files while versioning
+# The first few definitions are handcrafted
+# They are followed by automatically created definitions which are common for the used frameworks
+
 # Python
 *.venv
 user_secrets.py

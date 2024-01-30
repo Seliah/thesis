@@ -1,3 +1,6 @@
+# Configuration for this python project
+# This file contains configuration for tooling used in this project or project specific definitions
+
 [tool.ruff]
 # For available rules see https://beta.ruff.rs/docs/rules/
 # For origin of ALL see https://github.com/astral-sh/ruff/issues/2179

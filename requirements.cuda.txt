@@ -1,3 +1,6 @@
+# Requirements for executing deep learning CV on NVIDIA GPUs
+# See ./README.md#requirements
+
 --extra-index-url https://download.pytorch.org/whl/cu121
 torch
 torchvision

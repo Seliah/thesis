@@ -1,3 +1,4 @@
+"""Module for trying out the storage intensity of large numpy matrices."""
 from numpy import zeros
 from numpy.random import random as random_np
 from scipy.sparse import csr_array, random

@@ -1,3 +1,6 @@
+# Requirements for this project
+# See ./README.md#requirements
+
 ## Analysis
 # Common computer Vision algorithms and video stream input for analysis
 opencv-python

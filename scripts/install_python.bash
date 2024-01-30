@@ -1,3 +1,6 @@
+# Commands to install a new python version using "pyenv"
+# This was needed to deploy the system onto a system that had an old python version installed
+
 # pyenv install
 curl https://pyenv.run | bash
 

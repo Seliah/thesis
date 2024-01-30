@@ -1,5 +1,7 @@
 """Module for video analysis.
 
+All sources for the prototype are gathered here.
+
 This module implements functionality for analyzing video and image data with different methods:
 - using traditional computer vision algorithms via OpenCV, NumPy and SciPy
 - using deep learning based computer vision via YOLOv8
