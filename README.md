@@ -10,7 +10,7 @@ All source and test files that were created as part of the thesis are collected 
 
 The actual source files for the prototype are located inside `./analysis`. The remaining files are either test material, configurations files or scripts that handle tasks for deployment, testing or training deep learning models.
 
-To get to know more about each and every part of this repository, corresponding documentations can be used. Every file in this repository is documented right at the beginning. Every folder is documented with either a README.md or an `__init__.py` (for python source code) or both, describing the content of the file/folder.
+To get to know more about each and every part of this repository, corresponding documentations can be used. Every file in this repository is documented right at the beginning. Every folder is documented with either a `README.md` or an `__init__.py` (for python source code) or both, describing the content of the file/folder.
 
 This project is structered in the "flat layout" style, described by the official packaging documentation: <https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/>.
 
