@@ -1,3 +1,5 @@
+# Configuration file for user constants
+# These values will alter the bevhaviour of the prototype
 excludes = ["f98c6c50-b944-47ed-a11c-183fb0421cbe"]
 
 [shelf_monitoring]
