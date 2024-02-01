@@ -11,6 +11,8 @@ import typer
 from rich.console import Console
 from typing_extensions import Annotated
 
+from analysis import state
+from analysis.read import load_motions
 from analysis.vision.motion_search.read import calculate_heatmap, get_cameras, get_motion_data, print_motion_frames
 from user_secrets import URL
 
@@ -24,6 +26,7 @@ def motions(
     source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
 ):
     """Print out timestamps with motion for the given camera."""
+    state.motions = load_motions()
     if source is None:
         source = URL
     if (motion_data := get_motion_data(source)) is None:
@@ -36,6 +39,7 @@ def heatmap(
     source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
 ):
     """Print out heatmap data for a given camera."""
+    state.motions = load_motions()
     if source is None:
         source = URL
     console.print(calculate_heatmap(source))
@@ -44,6 +48,7 @@ def heatmap(
 @app.command()
 def cameras():
     """Print out cameras with motion data."""
+    state.motions = load_motions()
     cams = get_cameras()
     if cams is None:
         console.print("No cameras for today.")

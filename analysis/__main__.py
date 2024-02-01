@@ -29,7 +29,8 @@ console = Console()
 
 app = typer.Typer()
 app.add_typer(motion_cli.app, name="motion")
-app.add_typer(shelf_cli.app, name="shelf")
+app.add_typer(shelf_cli.yolo_app, name="yolo")
+app.add_typer(shelf_cli.shelf_app, name="shelf")
 
 
 async def _exit_on_input():
@@ -45,6 +46,7 @@ async def analyze_all(
     display: Annotated[Optional[str], typer.Argument(help="ID of a camera that is to be visualized.")] = None,
 ):
     """Analyze the streams of all cameras in the local video system by Adeck Systems."""
+    state.motions = load_motions()
     sources = await get_sources()
     task = create_task(analyze_sources(sources, display), "Capture main task", _logger)
     await _exit_on_input()
@@ -57,6 +59,7 @@ async def analyze(
     source: Annotated[Optional[str], typer.Argument(help="Video source. Can be a RTSP URL.")] = None,
 ):
     """Analyze the given stream, saving it with the source as an id."""
+    state.motions = load_motions()
     if source is None:
         source = URL
     task = create_task(analyze_sources({source: source}, source), "Capture main task", _logger)
@@ -89,5 +92,4 @@ def view(
 
 
 if __name__ == "__main__":
-    state.motions = load_motions()
     app()

@@ -12,30 +12,33 @@ The prdictions may be improved further by tweaking args like conf, iou or agnost
 # ruff: noqa: FA100
 from pathlib import Path
 from threading import Event
+from typing import Optional
 
-import typer
-from cv2 import VideoCapture, imread, imshow, rectangle, resize, waitKey
+import rich
+from cv2 import CAP_PROP_FPS, WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, rectangle, waitKey
+from cv2.typing import MatLike
+from reactivex import concat, repeat_value
 from reactivex import operators as ops
-from reactivex.operators import map as map_op
-from reactivex.operators import throttle_first
 from rich.console import Console
+from typer import Argument, Option, Typer
 from typing_extensions import Annotated
 
-from analysis.util.image import warp
+from analysis.types_adeck import settings
+from analysis.util.image import show, warp
 from analysis.util.rx import from_capture
-from analysis.util.yolov8 import get_rect_from_box
 from analysis.vision.shelf_monitoring.models import Model, models
 
 console = Console()
-app = typer.Typer()
+shelf_app = Typer()
+yolo_app = Typer()
 
 
 class _AnalysisError(Exception):
     """Error to raise when a problem happened during analysis of an image."""
 
 
-@app.command()
-def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")]):
+@yolo_app.command()
+def info(model_id: Annotated[Model, Argument(help="Which model to use for analysis.")]):
     """Print out heatmap data for a given camera."""
     from ultralytics import YOLO
 
@@ -45,12 +48,17 @@ def info(model_id: Annotated[Model, typer.Argument(help="Which model to use for 
     console.print(model.names)  # pyright: ignore[reportUnknownMemberType]
 
 
-@app.command()
+@yolo_app.command()
 def image(
-    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
-    path: Annotated[Path, typer.Argument(help="The path of the to be analyzed image.")],
-    labels: Annotated[bool, typer.Option(help="Whether to show class names or not.")] = False,
-    conf: Annotated[float, typer.Option(help="Whether to show class names or not.")] = 0.25,
+    model_id: Annotated[Model, Argument(help="Which model to use for analysis.")],
+    path: Annotated[Path, Argument(help="The path of the to be analyzed image.")],
+    labels: Annotated[bool, Option(help="Whether to show class names or not.")] = False,
+    conf: Annotated[float, Option(help="Whether to show class names or not.")] = 0.25,
+    crop_like: Annotated[Optional[str], Option(help="Crop the image like the configuration of the given ID.")] = None,
+    settings_path: Annotated[
+        Path,
+        Option(help="Path to the analysis settings file - needed when crop_like is given."),
+    ] = settings.DEFAULT_PATH,
 ):
     """Analyze a given image."""
     from ultralytics import YOLO
@@ -58,17 +66,28 @@ def image(
     from analysis.util.yolov8 import plot, predict
 
     model = YOLO(models[model_id]["path"])
-    results = predict(model, path, conf=conf)
+    img = imread(str(path))
+
+    if crop_like is not None:
+        monitoring_settings = settings.load(settings_path).shelf_monitoring
+        points = monitoring_settings.get(crop_like, None)
+        if points is None:
+            rich.print(f'No points configuration found for "{crop_like}"')
+            return
+        img = warp(img, points)
+
+    results = predict(model, img, conf=conf)
+    namedWindow("Results", WINDOW_NORMAL)
     for result in results:
         imshow("Results", plot(result, labels=labels, line_width=2))
         waitKey(0)
 
 
-@app.command()
+@yolo_app.command()
 def stream(
-    source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
-    model_id: Annotated[Model, typer.Argument(help="Which model to use for analysis.")],
-    labels: Annotated[bool, typer.Argument(help="Whether or not to show class names.")] = False,
+    model_id: Annotated[Model, Argument(help="Which model to use for analysis.")],
+    source: Annotated[str, Argument(help="Video source URL for input stream.")],
+    labels: Annotated[bool, Argument(help="Whether or not to show class names.")] = False,
 ):
     """Analyze a given video stream."""
     from ultralytics import YOLO
@@ -76,17 +95,17 @@ def stream(
     from analysis.util.yolov8 import plot, predict
 
     model = YOLO(models[model_id]["path"])
-    # for result in model.predict(source, stream=True):
-    for result in predict(model, source, stream=True, classes=[0]):
-        imshow("Results", resize(plot(result, labels=labels, line_width=2), (1440, 810)))
+    namedWindow("Results", WINDOW_NORMAL)
+    for result in predict(model, source, stream=True):
+        imshow("Results", plot(result, labels=labels, line_width=2))
         waitKey(1)
 
 
-@app.command()
-def shelf(
-    path_img1: Annotated[Path, typer.Argument(help="The path of the older image.")],
-    path_img2: Annotated[Path, typer.Argument(help="The path of the newer image.")],
-    overlap_threshold: Annotated[float, typer.Option(help="How big the detection box overlap must be (0-1).")] = 0.1,
+@shelf_app.command()
+def diff(
+    path_img1: Annotated[Path, Argument(help="The path of the older image.")],
+    path_img2: Annotated[Path, Argument(help="The path of the newer image.")],
+    overlap_threshold: Annotated[float, Option(help="How big the detection box overlap must be (0-1).")] = 0.1,
 ):
     """Analyze two images with shelf monitoring.
 
@@ -94,7 +113,7 @@ def shelf(
     """
     from ultralytics import YOLO
 
-    from analysis.util.yolov8 import compare_results, predict
+    from analysis.util.yolov8 import compare_results, get_rect_from_box, predict
 
     model_sku = YOLO(models[Model.sku]["path"])
     model_ossa = YOLO(models[Model.ossa]["path"])
@@ -120,43 +139,59 @@ def shelf(
     waitKey(0)
 
 
-@app.command()
-def cropped(
-    path: Annotated[Path, typer.Argument(help="The path of the to be cropped image.")],
-):
-    """Show the given image in a cropped representation, which will be used for analysis."""
-    img = imread(str(path))
-    # 3
-    points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
-    # 2
-    # points = ((1060, 350), (1790, 590), (1580, 930), (1020, 720))  # noqa: ERA001
-    image_warped = warp(img, points)
-    imshow("Cropped", image_warped)
-    waitKey(0)
-
-
-@app.command()
+@shelf_app.command(name="stream")
 def shelf_stream(
-    source: Annotated[str, typer.Argument(help="Video source URL for input stream.")],
+    source: Annotated[str, Argument(help="Video source URL for input stream.")],
+    memory_time: Annotated[float, Option(help="How long to memorize gaps.")] = 20,
+    time_per_frame: Annotated[float, Option(help="How long to wait between analyses.")] = 1,
+    crop_like: Annotated[Optional[str], Option(help="Crop the image like the configuration of the given ID.")] = None,
+    settings_path: Annotated[
+        Path,
+        Option(help="Path to the analysis settings file - needed when crop_like is given."),
+    ] = settings.DEFAULT_PATH,
 ):
     """Analyze a video stream with shelf monitoring."""
     from ultralytics import YOLO
 
-    points = ((780, 160), (1840, 490), (1580, 930), (800, 630))
+    from analysis.util.yolov8 import plot, predict
+    from analysis.vision.shelf_monitoring.removal import has_new_gap
+
+    memorized_frame_count = int(memory_time / time_per_frame)
+
     cap = VideoCapture(source)
-    model_sku = YOLO(models[Model.sku]["path"])
+    fps = round(cap.get(CAP_PROP_FPS))
+    console.print(f"FPS: ~{fps}")
+
     model_ossa = YOLO(models[Model.ossa]["path"])
 
-    from_capture(cap, Event()).pipe(
-        throttle_first(1 / 2),
-        map_op(lambda image: warp(image, points)),
-        ops.buffer_with_count(5),
-        # ops.do_action(lambda values: console.print(values[-1])),
-        # map_op(model_sku.predict),
-        # pairwise(),
-    ).subscribe()
-    # ).subscribe(lambda images: show(cap, images[1][0].plot()))
+    if crop_like is not None:
+        monitoring_settings = settings.load(settings_path).shelf_monitoring
+        points = monitoring_settings.get(crop_like, None)
+        if points is None:
+            rich.print(f'No points configuration found for "{crop_like}"')
+            return
+    else:
+        points = None
+
+    def analyze_shelf(image: MatLike):
+        if points is not None:
+            image = warp(image, points)
+        results = predict(model_ossa, image)
+        show(cap, plot(results[0]))
+        return results
+
+    console.print("Starting")
+    console.print(f"Memorizing {memorized_frame_count} frames.")
+    results = from_capture(cap, Event()).pipe(
+        ops.buffer_with_count(25),
+        ops.map(lambda images: images[-1]),
+        ops.map(analyze_shelf),
+    )
+    concat(repeat_value(None, memorized_frame_count), results).pipe(
+        ops.buffer_with_count(memorized_frame_count - 1, 1),
+        ops.map(has_new_gap),
+    ).subscribe(console.print)
 
 
 if __name__ == "__main__":
-    app()
+    shelf_app()
