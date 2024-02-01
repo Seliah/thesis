@@ -1,0 +1,9 @@
+excludes = ["f98c6c50-b944-47ed-a11c-183fb0421cbe"]
+
+[shelf_monitoring]
+# Warp 2
+shelf_alcohol = [[1106, 339], [1847, 589], [1645, 941], [1072, 721]]
+# # Warp 3
+# shelf_alcohol = [[832, 286], [1847, 589], [1645, 941], [854, 628]]
+# # Warp 3 with top
+# shelf_alcohol = [[838, 153], [1905, 436], [1645, 941], [854, 628]]

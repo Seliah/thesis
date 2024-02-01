@@ -28,7 +28,12 @@ class BaseType(ABC):
 T = TypeVar("T", bound=BaseType)
 
 
-def parse(app_type: type[T], json: Mapping[str, Any]) -> T | None:
+def parse_with_raise(app_type: type[T], json: Mapping[str, Any]):
+    """Parse a raw json dict into a object of the given type and raise on ValidationError."""
+    return app_type(**json)
+
+
+def parse(app_type: type[T], json: Mapping[str, Any]):
     """Parse a raw json dict into a object of the given type.
 
     :return: None - Validation error occurred.
@@ -37,7 +42,7 @@ def parse(app_type: type[T], json: Mapping[str, Any]) -> T | None:
         return app_type(**json)
     except ValidationError as exception:
         _logger.error(
-            f"Error parsing camera data for {app_type.repr_raw(json)}: {exception}",
+            f"Error parsing data for {app_type.repr_raw(json)}: {exception}",
         )
 
 
