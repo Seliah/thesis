@@ -11,7 +11,7 @@ from pydantic.dataclasses import dataclass
 from analysis.types_adeck import BaseType, parse_with_raise
 from analysis.util.image import RectPoints
 
-DEFAULT_PATH = Path("analysis/settings.toml")
+DEFAULT_PATH = Path("./settings.toml")
 
 
 @dataclass

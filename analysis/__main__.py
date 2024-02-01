@@ -17,7 +17,6 @@ from analysis.camera_info import get_sources
 from analysis.definitions import GRID_SIZE
 from analysis.read import load_motions
 from analysis.util.image import draw_grid, show
-from analysis.util.input import prompt
 from analysis.util.tasks import create_task, typer_async
 from analysis.vision.capture import analyze_sources
 from analysis.vision.motion_search import cli as motion_cli
@@ -34,6 +33,7 @@ app.add_typer(shelf_cli.shelf_app, name="shelf")
 
 
 async def _exit_on_input():
+    from analysis.util.input import prompt
     _logger.info("Running")
     await prompt()
     _logger.info("Got input, exiting...")

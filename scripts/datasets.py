@@ -62,7 +62,7 @@ def download(dataset_id: DatasetID):
     dataset = datasets[dataset_id]
     workspace = Roboflow(api_key=API_KEY).workspace(dataset["workspace"])
     project = workspace.project(dataset["project"])
-    project.version(dataset["version"]).download(FORMAT)
+    project.version(dataset["version"]).download(FORMAT, f"datasets/{dataset['project']}")
     console.print(
         "Now you need to go to ... and edit the paths to be accurate!",
         "Else there are gonna be errors when starting the training process.",
