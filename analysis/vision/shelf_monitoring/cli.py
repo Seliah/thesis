@@ -10,6 +10,7 @@ The prdictions may be improved further by tweaking args like conf, iou or agnost
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
+from logging import WARN, getLogger
 from pathlib import Path
 from threading import Event
 from typing import Optional
@@ -31,7 +32,9 @@ from analysis.vision.shelf_monitoring.models import Model, models
 console = Console()
 shelf_app = Typer()
 yolo_app = Typer()
+_logger = getLogger(__name__)
 
+N = 25
 
 class _AnalysisError(Exception):
     """Error to raise when a problem happened during analysis of an image."""
@@ -162,8 +165,9 @@ def shelf_stream(
     fps = round(cap.get(CAP_PROP_FPS))
     console.print(f"FPS: ~{fps}")
 
-    model_ossa = YOLO(models[Model.ossa]["path"])
+    model = YOLO(models[Model.sku_gap]["path"])
 
+    # Get warping bound points for this stream, if configured
     if crop_like is not None:
         monitoring_settings = settings.load(settings_path).shelf_monitoring
         points = monitoring_settings.get(crop_like, None)
@@ -176,21 +180,26 @@ def shelf_stream(
     def analyze_shelf(image: MatLike):
         if points is not None:
             image = warp(image, points)
-        results = predict(model_ossa, image)
-        show(cap, plot(results[0]))
+        results = predict(model, image, classes=[1])
+        show(cap, plot(results[0], labels=True, line_width=1), int(fps / 4))
         return results
 
     console.print("Starting")
     console.print(f"Memorizing {memorized_frame_count} frames.")
+    # Prevent debug output from predictions
+    getLogger("ultralytics").setLevel(WARN)
+    # Get analysis results for every n-th frame
     results = from_capture(cap, Event()).pipe(
-        ops.buffer_with_count(25),
+        ops.buffer_with_count(N),
+        # Return only the last frame
         ops.map(lambda images: images[-1]),
         ops.map(analyze_shelf),
     )
     concat(repeat_value(None, memorized_frame_count), results).pipe(
+        # Emit all previous results as well
         ops.buffer_with_count(memorized_frame_count - 1, 1),
         ops.map(has_new_gap),
-    ).subscribe(console.print)
+    ).subscribe(lambda has_new: console.print("Neue Entnahme") if has_new else None, _logger.exception)
 
 
 if __name__ == "__main__":

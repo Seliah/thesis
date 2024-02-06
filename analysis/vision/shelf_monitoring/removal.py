@@ -1,7 +1,7 @@
 """Module for defining logic for detecting removal from shelves."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Iterable
 
 import rich
 
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from ultralytics.engine.results import Results
 
 OVERLAP_THRESHOLD = 0.1
+NEEDED_OCCURENCES = 2
 
 
 def has_new_gap(ossa_results: list[list[Results] | None]):
@@ -20,23 +21,35 @@ def has_new_gap(ossa_results: list[list[Results] | None]):
     if newest is None or newest[0].boxes is None:
         # There was no gap detected, there cant be a new one
         return False
-    previous = [results for results in reversed(ossa_results[0:-1]) if results is not None]
-    matches = [
+    # Get non None previous results into a iterable, but reversed
+    previous = (results for results in reversed(ossa_results[0:-1]) if results is not None)
+    # Get box overlaps between the current results and each previous result
+    overlaps = [
         compare_results(newest[0].boxes, previous_boxes)
         for previous_results in previous
         if (previous_boxes := previous_results[0].boxes) is not None
     ]
-    xyxy = newest[0].boxes.xyxy  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
-    return any(_is_new_gap(index, matches) for index, _bounds in enumerate(xyxy))  # pyright: ignore[reportUnknownArgumentType]
+    current_boxes_bounds = newest[0].boxes.xyxy  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
+    # Check if any of the boxes is a new gap
+    return any(_is_new_gap(index, overlaps) for index, _bounds in enumerate(current_boxes_bounds))  # pyright: ignore[reportUnknownArgumentType]
 
-
-def _is_new_gap(index: int, matches: list[Tensor]):
-    for overlaps in matches:
-        o = overlaps[index]
-        if any(overlap for overlap in o if overlap > OVERLAP_THRESHOLD):
-            # Overlapping gap was found, this one is not new
-            rich.print(f"Found previously detected gap for gap at {index}.")
-            return False
-    # No overlapping gap was found, this one is new
-    rich.print("Gap is new!")
-    return True
+def _is_new_gap(index: int, all_overlaps: Iterable[Tensor]):
+    occurences = 0
+    for overlaps in all_overlaps:
+        for overlap in overlaps[index]:
+            if overlap > OVERLAP_THRESHOLD:
+                occurences += 1
+                if occurences > NEEDED_OCCURENCES:
+                    # Multiple overlapping gaps found, this one is not new
+                    if __debug__:
+                        rich.print(f"Found previously detected gaps for gap at {index}. This one is not new.")
+                    return False
+    if occurences == NEEDED_OCCURENCES:
+        # Only one overlapping gap was found, this one is new
+        if __debug__:
+            rich.print("Gap is new!")
+        return True
+    # Not enough previously overlapping gaps found, this one is probably a false positive
+    if __debug__:
+        rich.print(f"Not enough previously overlapping gaps found for gap at {index}. This one is probably a false positive.")
+    return False
