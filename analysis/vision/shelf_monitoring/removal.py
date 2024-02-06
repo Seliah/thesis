@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from torch import Tensor
     from ultralytics.engine.results import Results
 
-OVERLAP_THRESHOLD = 0.1
+OVERLAP_THRESHOLD = 0.8
 NEEDED_OCCURENCES = 2
 
 

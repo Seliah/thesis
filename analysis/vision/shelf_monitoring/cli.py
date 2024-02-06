@@ -34,7 +34,7 @@ shelf_app = Typer()
 yolo_app = Typer()
 _logger = getLogger(__name__)
 
-N = 25
+N = 10
 
 class _AnalysisError(Exception):
     """Error to raise when a problem happened during analysis of an image."""
