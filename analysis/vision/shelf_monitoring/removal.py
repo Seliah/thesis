@@ -3,8 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
 
-import rich
-
+from analysis.app_logging import logger
 from analysis.util.yolov8 import compare_results
 
 if TYPE_CHECKING:
@@ -42,14 +41,14 @@ def _is_new_gap(index: int, all_overlaps: Iterable[Tensor]):
                 if occurences > NEEDED_OCCURENCES:
                     # Multiple overlapping gaps found, this one is not new
                     if __debug__:
-                        rich.print(f"Found previously detected gaps for gap at {index}. This one is not new.")
+                        logger.debug(f"Found previously detected gaps for gap at {index}. This one is not new.")
                     return False
     if occurences == NEEDED_OCCURENCES:
         # Only one overlapping gap was found, this one is new
         if __debug__:
-            rich.print("Gap is new!")
+            logger.debug("Gap is new!")
         return True
     # Not enough previously overlapping gaps found, this one is probably a false positive
     if __debug__:
-        rich.print(f"Not enough previously overlapping gaps found for gap at {index}. This one is probably a false positive.")
+        logger.debug(f"Not enough previously overlapping gaps found for gap at {index}. This one is probably a false positive.")
     return False

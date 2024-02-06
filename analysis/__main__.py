@@ -4,7 +4,6 @@ This can be used for trying out functionality or hardware, programming or debugg
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
-from logging import getLogger
 from typing import Optional
 
 import cv2
@@ -13,6 +12,7 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 from analysis import state
+from analysis.app_logging import logger
 from analysis.camera_info import get_sources
 from analysis.definitions import GRID_SIZE
 from analysis.read import load_motions
@@ -23,7 +23,6 @@ from analysis.vision.motion_search import cli as motion_cli
 from analysis.vision.shelf_monitoring import cli as shelf_cli
 from user_secrets import URL
 
-_logger = getLogger()
 console = Console()
 
 app = typer.Typer()
@@ -34,9 +33,9 @@ app.add_typer(shelf_cli.shelf_app, name="shelf")
 
 async def _exit_on_input():
     from analysis.util.input import prompt
-    _logger.info("Running")
+    logger.info("Running")
     await prompt()
-    _logger.info("Got input, exiting...")
+    logger.info("Got input, exiting...")
     state.terminating.set()
 
 
@@ -48,7 +47,7 @@ async def analyze_all(
     """Analyze the streams of all cameras in the local video system by Adeck Systems."""
     state.motions = load_motions()
     sources = await get_sources()
-    task = create_task(analyze_sources(sources, display), "Capture main task", _logger)
+    task = create_task(analyze_sources(sources, display), "Capture main task", logger)
     await _exit_on_input()
     await task
 
@@ -62,7 +61,7 @@ async def analyze(
     state.motions = load_motions()
     if source is None:
         source = URL
-    task = create_task(analyze_sources({source: source}, source), "Capture main task", _logger)
+    task = create_task(analyze_sources({source: source}, source), "Capture main task", logger)
     await _exit_on_input()
     await task
 

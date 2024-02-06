@@ -5,13 +5,12 @@ These types can be used for automatic validation, type checking, linting and int
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from logging import getLogger
 from typing import Any, Mapping, TypeVar
 
 from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 
-_logger = getLogger(__name__)
+from analysis.app_logging import logger
 
 
 @dataclass
@@ -41,7 +40,7 @@ def parse(app_type: type[T], json: Mapping[str, Any]):
     try:
         return app_type(**json)
     except ValidationError as exception:
-        _logger.error(
+        logger.error(
             f"Error parsing data for {app_type.repr_raw(json)}: {exception}",
         )
 

@@ -15,7 +15,6 @@ from pathlib import Path
 from threading import Event
 from typing import Optional
 
-import rich
 from cv2 import CAP_PROP_FPS, WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, rectangle, waitKey
 from cv2.typing import MatLike
 from reactivex import concat, repeat_value
@@ -24,6 +23,7 @@ from rich.console import Console
 from typer import Argument, Option, Typer
 from typing_extensions import Annotated
 
+from analysis.app_logging import logger
 from analysis.types_adeck import settings
 from analysis.util.image import show, warp
 from analysis.util.rx import from_capture
@@ -32,7 +32,6 @@ from analysis.vision.shelf_monitoring.models import Model, models
 console = Console()
 shelf_app = Typer()
 yolo_app = Typer()
-_logger = getLogger(__name__)
 
 N = 10
 
@@ -75,7 +74,7 @@ def image(
         monitoring_settings = settings.load(settings_path).shelf_monitoring
         points = monitoring_settings.get(crop_like, None)
         if points is None:
-            rich.print(f'No points configuration found for "{crop_like}"')
+            logger.error(f'No points configuration found for "{crop_like}"')
             return
         img = warp(img, points)
 
@@ -163,7 +162,7 @@ def shelf_stream(
 
     cap = VideoCapture(source)
     fps = round(cap.get(CAP_PROP_FPS))
-    console.print(f"FPS: ~{fps}")
+    logger.info(f"FPS: ~{fps}")
 
     model = YOLO(models[Model.sku_gap]["path"])
 
@@ -172,7 +171,7 @@ def shelf_stream(
         monitoring_settings = settings.load(settings_path).shelf_monitoring
         points = monitoring_settings.get(crop_like, None)
         if points is None:
-            rich.print(f'No points configuration found for "{crop_like}"')
+            logger.error(f'No points configuration found for "{crop_like}"')
             return
     else:
         points = None
@@ -184,8 +183,8 @@ def shelf_stream(
         show(cap, plot(results[0], labels=True, line_width=1), int(fps / 4))
         return results
 
-    console.print("Starting")
-    console.print(f"Memorizing {memorized_frame_count} frames.")
+    logger.info("Starting")
+    logger.info(f"Memorizing {memorized_frame_count} frames.")
     # Prevent debug output from predictions
     getLogger("ultralytics").setLevel(WARN)
     # Get analysis results for every n-th frame
@@ -199,7 +198,7 @@ def shelf_stream(
         # Emit all previous results as well
         ops.buffer_with_count(memorized_frame_count - 1, 1),
         ops.map(has_new_gap),
-    ).subscribe(lambda has_new: console.print("Neue Entnahme") if has_new else None, _logger.exception)
+    ).subscribe(lambda has_new: logger.info("Neue Entnahme") if has_new else None, logger.exception)
 
 
 if __name__ == "__main__":

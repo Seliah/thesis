@@ -4,7 +4,6 @@ See __main__ for application.
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
-from logging import DEBUG, basicConfig
 from typing import Optional
 
 import typer
@@ -16,7 +15,6 @@ from analysis.read import load_motions
 from analysis.vision.motion_search.read import calculate_heatmap, get_cameras, get_motion_data, print_motion_frames
 from user_secrets import URL
 
-basicConfig(level=DEBUG)
 console = Console()
 app = typer.Typer(help="Read saved analysis data.")
 

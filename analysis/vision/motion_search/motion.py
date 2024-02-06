@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
 import cv2
@@ -12,6 +11,7 @@ from reactivex.operators import map as map_op
 from scipy.sparse import lil_array
 
 from analysis import definitions, state
+from analysis.app_logging import logger
 from analysis.util.image import draw_grid, draw_overlay
 from analysis.util.time import seconds_since_midnight
 
@@ -26,7 +26,6 @@ TIMEFRAMES = int(DAY_IN_SECONDS / definitions.INTERVAL)
 FPS = 5
 TIME_PER_FRAME = 1 / FPS
 
-_logger = getLogger(__name__)
 
 
 def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
@@ -155,4 +154,4 @@ def write_motion():
     """Write motion data from local state to disk."""
     with definitions.PATH_MOTIONS.open("wb") as f:
         np.save(f, np.asanyarray(state.motions))  # pyright: ignore[reportUnknownMemberType]
-        _logger.info("Wrote motion analysis results to disk.")
+        logger.info("Wrote motion analysis results to disk.")
