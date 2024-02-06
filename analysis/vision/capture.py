@@ -111,10 +111,10 @@ def _capture(
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    _get_merged_output(frames, analyses, visualize).subscribe(conn.send)
+    _get_merged_output(frames, analyses, visualize).subscribe(conn.send, _logger.exception)
 
     capture_stream = from_capture(VideoCapture(source), termination_event)
-    capture_stream.subscribe(frames)
+    capture_stream.subscribe(frames, _logger.exception)
 
 
 def _get_merged_output(frames: Subject[MatLike], analyses: dict[str, Analysis[Any]], visualize: bool):
