@@ -10,7 +10,9 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import Manager, Pipe
 from typing import TYPE_CHECKING, Any
 
-from cv2 import VideoCapture
+from cv2 import (
+    VideoCapture,
+)
 from cv2.typing import MatLike
 from reactivex import merge
 from reactivex import operators as ops
@@ -30,7 +32,7 @@ loop = get_event_loop()
 
 
 subjects: set[Subject[Any]] = set()
-thread_executor = ThreadPoolExecutor(thread_name_prefix="Parser")
+thread_executor = ThreadPoolExecutor(thread_name_prefix="ParseThread")
 process_executor = ProcessPoolExecutor(16)
 
 
@@ -59,11 +61,11 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         # Cancel future tasks
         process_executor.shutdown(wait=False, cancel_futures=True)
         await gather(*tasks)
-    logger.info("All analysis processes terminated.")
-    # Run all on_termination callbacks defined by the analyses
-    callbacks = [callback for analysis in analyses.values() if (callback := analysis.on_termination) is not None]
-    for termination_callback in callbacks:
-        termination_callback()
+        logger.info("All analysis processes terminated.")
+        # Run all on_termination callbacks defined by the analyses
+        callbacks = [callback for analysis in analyses.values() if (callback := analysis.on_termination) is not None]
+        for termination_callback in callbacks:
+            termination_callback()
 
 
 async def _analyze_source(source: str, source_id: str, visualize: bool, event: threading.Event):
@@ -82,7 +84,11 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
         analyses,
         input_connection,
     )
-    create_task(wait_for(capture_future, timeout=None), "Subprocess handler task", logger)
+    create_task(
+        wait_for(capture_future, timeout=None),
+        f'Capture and analysis task for source "{source}"',
+        logger,
+    )
     # Run parsing in multiple threads in foreground
     await loop.run_in_executor(
         thread_executor,
@@ -104,15 +110,19 @@ def _capture(
     This will set up only one input to minimize the I/O usage for camera and this machine.
     Analysis results are all send over the given connection with an analysis identifier prefix to enable parsing.
     """
+    logger.debug(f'Starting video capture and analysis for source "{source}".')
     if not definitions.IS_SERVICE:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    _get_merged_output(frames, analyses, visualize).subscribe(conn.send, logger.exception)
+    _get_merged_output(frames, analyses, visualize).subscribe(on_error=logger.exception)
 
-    capture_stream = from_capture(VideoCapture(source), termination_event)
+    capture = VideoCapture()
+    capture.open(source)
+    logger.debug(f'Video capture initialized for source "{source}". Backend: {capture.getBackendName()}')
+    capture_stream = from_capture(capture, termination_event)
     capture_stream.subscribe(frames, logger.exception)
 
 

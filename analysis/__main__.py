@@ -4,6 +4,7 @@ This can be used for trying out functionality or hardware, programming or debugg
 """
 # Disable __futures__ import hint as it makes typer unfunctional on python 3.8
 # ruff: noqa: FA100
+from os import getpid
 from typing import Optional
 
 import cv2
@@ -30,9 +31,12 @@ app.add_typer(motion_cli.app, name="motion")
 app.add_typer(shelf_cli.yolo_app, name="yolo")
 app.add_typer(shelf_cli.shelf_app, name="shelf")
 
+logger.info(f"PID: {getpid()}")
+
 
 async def _exit_on_input():
     from analysis.util.input import prompt
+
     logger.info("Running")
     await prompt()
     logger.info("Got input, exiting...")
@@ -47,7 +51,7 @@ async def analyze_all(
     """Analyze the streams of all cameras in the local video system by Adeck Systems."""
     state.motions = load_motions()
     sources = await get_sources()
-    task = create_task(analyze_sources(sources, display), "Capture main task", logger)
+    task = create_task(analyze_sources(sources, display), "Analysis main task", logger)
     await _exit_on_input()
     await task
 
@@ -61,7 +65,7 @@ async def analyze(
     state.motions = load_motions()
     if source is None:
         source = URL
-    task = create_task(analyze_sources({source: source}, source), "Capture main task", logger)
+    task = create_task(analyze_sources({source: source}, source), "Analysis main task", logger)
     await _exit_on_input()
     await task
 

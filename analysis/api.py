@@ -27,7 +27,7 @@ async def _main(_: FastAPI):
     state.motions = load_motions()
     logger.info("Starting analysis.")
     sources = await get_sources()
-    task = create_task(analyze_sources(sources), "Capture main task", logger)
+    task = create_task(analyze_sources(sources), "Analysis API main task", logger)
     # Wait for program termination command
     yield
     logger.info("Terminating analysis.")
