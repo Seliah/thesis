@@ -22,6 +22,7 @@ class DatasetID(str, Enum):
 
     ossa = "ossa"
     sku = "sku110k"
+    sku_gaps = "sku_gaps"
 
 
 class _DatasetInfo(TypedDict):
@@ -41,6 +42,12 @@ datasets: dict[DatasetID, _DatasetInfo] = {
         "project": "sku-110k",
         "version": 4,
     },
+    DatasetID.sku_gaps: {
+        "workspace": "final-project-object-detection-for-instore-inventory-management",
+        "project": "empty-spaces-in-a-supermarket-hanger-1upsp",
+        # Older versions seem to contain more images but falsy annotations in some of them
+        "version": 29,
+    },
 }
 """Defintion for all known datasets.
 
@@ -55,7 +62,7 @@ def download(dataset_id: DatasetID):
     dataset = datasets[dataset_id]
     workspace = Roboflow(api_key=API_KEY).workspace(dataset["workspace"])
     project = workspace.project(dataset["project"])
-    project.version(dataset["version"]).download(FORMAT)
+    project.version(dataset["version"]).download(FORMAT, f"datasets/{dataset['project']}")
     console.print(
         "Now you need to go to ... and edit the paths to be accurate!",
         "Else there are gonna be errors when starting the training process.",

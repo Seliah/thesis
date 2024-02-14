@@ -11,6 +11,7 @@ class Model(str, Enum):
 
     ossa = "ossa"
     sku = "sku110k"
+    sku_gap = "sku_gap"
     yolov8_nano = "n"
     yolov8_small = "s"
     yolov8_medium = "m"
@@ -37,5 +38,9 @@ models: dict[Model, _ModelInfo] = {
     Model.yolov8_medium: {
         "info": "yxcv",
         "path": Path("weights/yolov8m.pt"),
+    },
+    Model.sku_gap: {
+        "info": "yxcv",
+        "path": Path("weights/yolov8_sku_gap.pt"),
     },
 }

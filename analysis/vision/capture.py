@@ -7,7 +7,6 @@ from __future__ import annotations
 import signal
 from asyncio import gather, get_event_loop, wait_for
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from logging import getLogger
 from multiprocessing import Manager, Pipe
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +17,7 @@ from reactivex import operators as ops
 from reactivex.subject import Subject
 
 from analysis import definitions, state
+from analysis.app_logging import logger
 from analysis.util.rx import from_capture
 from analysis.util.tasks import create_task
 from analysis.vision.analyses import Analysis, analyses
@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
 loop = get_event_loop()
 
-_logger = getLogger(__name__)
 
 subjects: set[Subject[Any]] = set()
 thread_executor = ThreadPoolExecutor(thread_name_prefix="Parser")
@@ -49,18 +48,18 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
             create_task(
                 _analyze_source(source, source_id, source_id == display, event),
                 source_id,
-                _logger,
+                logger,
             )
             for source_id, source in sources.items()
         ]
-        _logger.info("Analysis is running.")
+        logger.info("Analysis is running.")
         await state.terminating.wait()
-        _logger.debug("Program terminating, shutting down analysis processes.")
+        logger.debug("Program terminating, shutting down analysis processes.")
         event.set()
         # Cancel future tasks
         process_executor.shutdown(wait=False, cancel_futures=True)
         await gather(*tasks)
-    _logger.info("All analysis processes terminated.")
+    logger.info("All analysis processes terminated.")
     # Run all on_termination callbacks defined by the analyses
     callbacks = [callback for analysis in analyses.values() if (callback := analysis.on_termination) is not None]
     for termination_callback in callbacks:
@@ -83,7 +82,7 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
         analyses,
         input_connection,
     )
-    create_task(wait_for(capture_future, timeout=None), "Subprocess handler task", _logger)
+    create_task(wait_for(capture_future, timeout=None), "Subprocess handler task", logger)
     # Run parsing in multiple threads in foreground
     await loop.run_in_executor(
         thread_executor,
@@ -111,10 +110,10 @@ def _capture(
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    _get_merged_output(frames, analyses, visualize).subscribe(conn.send)
+    _get_merged_output(frames, analyses, visualize).subscribe(conn.send, logger.exception)
 
     capture_stream = from_capture(VideoCapture(source), termination_event)
-    capture_stream.subscribe(frames)
+    capture_stream.subscribe(frames, logger.exception)
 
 
 def _get_merged_output(frames: Subject[MatLike], analyses: dict[str, Analysis[Any]], visualize: bool):

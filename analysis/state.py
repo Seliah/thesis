@@ -7,15 +7,10 @@ See :module:`definitions` for constant variables.
 from __future__ import annotations
 
 from asyncio import Event
-from logging import DEBUG, basicConfig, getLogger
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from analysis.definitions import MotionData
-
-basicConfig(level=DEBUG)
-_logger = getLogger()
-_logger.debug("Logging set up.")
 
 terminating = Event()
 """Flag to quit long running processes."""

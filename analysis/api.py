@@ -6,7 +6,6 @@ It is intended to run this as a systemd service unit. It is optimized for runnin
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from logging import DEBUG, basicConfig, getLogger
 from typing import List, Tuple, cast
 
 from fastapi import FastAPI, HTTPException
@@ -15,25 +14,23 @@ from numpy import uint32
 from numpy.typing import NDArray
 
 from analysis import definitions, state
+from analysis.app_logging import logger
 from analysis.camera_info import get_sources
 from analysis.read import load_motions
 from analysis.util.tasks import create_task
 from analysis.vision.capture import analyze_sources
 from analysis.vision.motion_search.read import calculate_heatmap, get_motions_in_area
 
-basicConfig(level=DEBUG)
-_logger = getLogger(__name__)
-
 
 @asynccontextmanager
 async def _main(_: FastAPI):
     state.motions = load_motions()
-    _logger.info("Starting analysis.")
+    logger.info("Starting analysis.")
     sources = await get_sources()
-    task = create_task(analyze_sources(sources), "Capture main task", _logger)
+    task = create_task(analyze_sources(sources), "Capture main task", logger)
     # Wait for program termination command
     yield
-    _logger.info("Terminating analysis.")
+    logger.info("Terminating analysis.")
     state.terminating.set()
     await task
 
@@ -68,7 +65,7 @@ def get_motions_from_percent(camera_id: str, left: float, top: float, width: flo
     height = int(height * definitions.GRID_SIZE[0]) + 1
     x = int(left * definitions.GRID_SIZE[1])
     width = int(width * definitions.GRID_SIZE[1]) + 1
-    _logger.debug(f"{x}, {y} - {width}, {height}")
+    logger.debug(f"{x}, {y} - {width}, {height}")
     return get_motions_from_cells(camera_id, x, y, width, height)
 
 
@@ -91,7 +88,7 @@ def get_motions_from_pixels(camera_id: str, x_pixels: int, y_pixels: int, width_
 def get_motions_from_cells(camera_id: str, x: int, y: int, width: int, height: int) -> List[int]:  # noqa: UP006
     """Get motion frames for given image section (in cells)."""
     if (x + width) > definitions.GRID_SIZE[1] or (y + height) > definitions.GRID_SIZE[0]:
-        _logger.error(f"{x}, {y} - {width}, {height}")
+        logger.error(f"{x}, {y} - {width}, {height}")
         raise HTTPException(422, "Requested selection is out of bounds.")
     merged = get_motions_in_area(state.motions, camera_id, (x, y, width, height))
     asdf = cast(Tuple[NDArray[uint32], NDArray[uint32]], merged.nonzero())

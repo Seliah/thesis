@@ -21,7 +21,7 @@ def predict(model: YOLO, source: Source, stream: bool = False, classes: list[int
 
     See https://docs.ultralytics.com/modes/predict/#inference-arguments
     """
-    return cast(list[Results], model.predict(source, stream, None, classes=classes, conf=conf))  # pyright: ignore[reportUnknownMemberType]
+    return cast(list[Results], model.predict(source, stream, classes=classes, conf=conf))  # pyright: ignore[reportUnknownMemberType]
 
 
 def plot(results: Results, labels: bool = True, line_width: float | None = None):
