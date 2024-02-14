@@ -1,4 +1,6 @@
-"""Module that implements logic to read and interpret motion data from the local state."""
+"""Module that implements logic for saving and querying motion analysis data.
+
+This is done by reading and interpreting motion data from the local state."""
 from __future__ import annotations
 
 import sys
