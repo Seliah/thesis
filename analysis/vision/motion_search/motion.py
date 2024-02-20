@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING, Any
 
 import cv2
 import numpy as np
-from reactivex.operators import do_action, pairwise, throttle_first
-from reactivex.operators import map as map_op
-from scipy.sparse import lil_array
-
 from analysis import definitions, state
 from analysis.app_logging import logger
 from analysis.util.image import draw_grid, draw_overlay
 from analysis.util.time import seconds_since_midnight
+from reactivex.operators import do_action
+from reactivex.operators import map as map_op
+from reactivex.operators import pairwise, throttle_first
+from scipy.sparse import lil_array
 
 if TYPE_CHECKING:
     from cv2.typing import MatLike
@@ -30,6 +30,7 @@ TIME_PER_FRAME = 1 / FPS
 
 def _get_changes(diff: MatLike, grid_size: tuple[int, int]):
     """Get the changes represented by the given difference image in a segment matrix."""
+    # A linear resize could be a more performant alternative to this and could be tried to improve performance 
     # Get the dimensions of the image
     height, width = diff.shape
 
