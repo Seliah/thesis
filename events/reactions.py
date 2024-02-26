@@ -13,8 +13,7 @@ console = Console()
 
 
 def _handle_queue(event: Message):
-    value = event["Message"]["_value_1"]["Data"]["SimpleItem"][0]["Value"]
-    queue_detected = bool(int(value))
+    queue_detected = _truthy(_get_value(event))
     log_message = "Queue detected!" if queue_detected else "No queue detected."
     logger.info(log_message)
 
@@ -24,18 +23,36 @@ def _handle_crossing(_event: Message):
 
 
 def _handle_tamper(event: Message):
-    value = event["Message"]["_value_1"]["Data"]["SimpleItem"][0]["Value"]
-    tamper_detected = value == "true"
+    tamper_detected = _truthy(_get_value(event))
     log_message = "Tampering detected!" if tamper_detected else "No tampering detected."
     logger.info(log_message)
+
+
+def _handle_intrusion(event: Message):
+    intrusion_detected = _truthy(_get_value(event))
+    log_message = "Intrusion detected!" if intrusion_detected else "No intrusion detected."
+    logger.info(log_message)
+
+
+def _truthy(value: str):
+    return value in ("true", "1")
 
 
 ignore = {"tns1:Device/tnsaxis:IO/VirtualInput"}
 
 handlers = {
+    # Queue detection topics Axis
     "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1Scenario1Threshold": _handle_queue,
+    "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1Scenario2Threshold": _handle_queue,
+    "tnsaxis:CameraApplicationPlatform/ObjectAnalytics/Device1Scenario3Threshold": _handle_queue,
+    # Line cross Hik
     "tns1:RuleEngine/LineDetector/Crossed": _handle_crossing,
+    # Tampering topic Hik
     "tns1:RuleEngine/TamperDetector/Tamper": _handle_tamper,
+    # Tampering topic Axis
+    "tns1:VideoSource/tnsaxis:Tampering": _handle_tamper,
+    # Region monitoring (intrusion detection) Hik
+    "tns1:RuleEngine/FieldDetector/ObjectsInside": _handle_intrusion,
 }
 
 
@@ -60,3 +77,7 @@ def print_message(message: Message):
 
 def _get_topic(event: Message):
     return event["Topic"]["_value_1"]
+
+
+def _get_value(event: Message):
+    return event["Message"]["_value_1"]["Data"]["SimpleItem"][0]["Value"]
