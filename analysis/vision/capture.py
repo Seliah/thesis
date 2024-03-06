@@ -117,7 +117,7 @@ def _capture(
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    _get_merged_output(frames, analyses, visualize).subscribe(on_error=logger.exception)
+    _get_merged_output(frames, analyses, visualize).subscribe(conn.send, on_error=logger.exception)
 
     capture = VideoCapture()
     capture.open(source)
