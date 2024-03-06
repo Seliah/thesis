@@ -1,0 +1,23 @@
+[Unit]
+Description=Adeck Events Service
+# Part of the adeck service group
+PartOf=adeck-umbrella.service
+
+[Service]
+Environment=PYTHONPATH=/home/test/Code/adeck-analysis/
+Environment=RUN_AS_SERVICE=True
+# Use -OO (optimization) to remove development logic
+ExecStart=/usr/bin/python3 -OO /home/test/Code/adeck-analysis/events listen-all
+# Measure memory usage
+MemoryAccounting=true
+# Restart when the program somehow terminated (crash or succesful is irrelevant - this should always run)
+Restart=always
+# Don't wait longer than 25 seconds starting or stopping the process
+TimeoutSec=25
+User=test
+Group=test
+SyslogIdentifier=ADECK EVENTS
+
+[Install]
+# Part of the adeck service group
+WantedBy=adeck-umbrella.service
