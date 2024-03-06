@@ -3,39 +3,49 @@
 A handler is a callback function that is specific to a message topic.
 Handlers a kept in a dictionary, mapped by the corresponding topic.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from rich.console import Console
 
 from analysis.app_logging import logger
-from events.onvif_types.message import Message
+
+if TYPE_CHECKING:
+    from analysis.types_adeck.camera import Camera
+    from events.onvif_types.message import Message
 
 console = Console()
 
 
-def _handle_queue(event: Message):
+def _handle_queue(event: Message, camera: Camera | None = None):
     queue_detected = _truthy(_get_value(event))
     log_message = "Queue detected!" if queue_detected else "No queue detected."
-    logger.info(log_message)
+    logger.info(f"{_get_label(camera)} - {log_message}")
 
 
-def _handle_crossing(_event: Message):
-    logger.info("Line crossed!")
+def _handle_crossing(_event: Message, camera: Camera | None = None):
+    logger.info(f"{_get_label(camera)} - Line crossed!")
 
 
-def _handle_tamper(event: Message):
+def _handle_tamper(event: Message, camera: Camera | None = None):
     tamper_detected = _truthy(_get_value(event))
     log_message = "Tampering detected!" if tamper_detected else "No tampering detected."
-    logger.info(log_message)
+    logger.info(f"{_get_label(camera)} - {log_message}")
 
 
-def _handle_intrusion(event: Message):
+def _handle_intrusion(event: Message, camera: Camera | None = None):
     intrusion_detected = _truthy(_get_value(event))
     log_message = "Intrusion detected!" if intrusion_detected else "No intrusion detected."
-    logger.info(log_message)
+    logger.info(f"{_get_label(camera)} - {log_message}")
 
 
 def _truthy(value: str):
     return value in ("true", "1")
+
+
+def _get_label(camera: Camera | None = None):
+    return str(camera) if camera is not None else "Unkown Camera"
 
 
 ignore = {"tns1:Device/tnsaxis:IO/VirtualInput"}
@@ -56,13 +66,13 @@ handlers = {
 }
 
 
-def handle_message(message: Message):
+def handle_message(message: Message, camera: Camera | None = None):
     """Run a handler for the given message, if defined."""
     topic = _get_topic(message)
     if topic not in ignore:
         handler = handlers.get(topic, None)
         if handler is not None:
-            handler(message)
+            handler(message, camera)
 
 
 def print_message(message: Message):
