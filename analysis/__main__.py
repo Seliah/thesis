@@ -51,7 +51,7 @@ async def analyze_all(
     """Analyze the streams of all cameras in the local video system by Adeck Systems."""
     state.motions = load_motions()
     sources = await get_sources()
-    task = create_task(analyze_sources(sources, display), "Analysis main task", logger)
+    task = create_task(analyze_sources(sources, display), "Analysis main task", logger, print_exceptions=True)
     await _exit_on_input()
     await task
 
@@ -65,7 +65,7 @@ async def analyze(
     state.motions = load_motions()
     if source is None:
         source = URL
-    task = create_task(analyze_sources({source: source}, source), "Analysis main task", logger)
+    task = create_task(analyze_sources({source: source}, source), "Analysis main task", logger, print_exceptions=True)
     await _exit_on_input()
     await task
 

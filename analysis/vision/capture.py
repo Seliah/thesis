@@ -51,6 +51,7 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
                 _analyze_source(source, source_id, source_id == display, event),
                 source_id,
                 logger,
+                print_exceptions=True,
             )
             for source_id, source in sources.items()
         ]
@@ -88,6 +89,7 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
         wait_for(capture_future, timeout=None),
         f'Capture and analysis task for source "{source}"',
         logger,
+        print_exceptions=True,
     )
     # Run parsing in multiple threads in foreground
     await loop.run_in_executor(
