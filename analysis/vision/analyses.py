@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
 from analysis.vision.motion_search.motion import analyze_motion, update_global_matrix, write_motion
-from analysis.vision.shelf_monitoring.cli import analyze_shelf, parse_shelf_result
+from analysis.vision.shelf_monitoring.gaps import analyze_shelf, parse_shelf_result
 
 if TYPE_CHECKING:
     from cv2.typing import MatLike
