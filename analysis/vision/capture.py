@@ -35,9 +35,9 @@ loop = get_event_loop()
 
 
 subjects: set[Subject[Any]] = set()
-thread_executor = ThreadPoolExecutor(thread_name_prefix="ParseThread")
+thread_executor = ThreadPoolExecutor(256, "ParseThread")
 process_executor = ProcessPoolExecutor(128)
-scheduler = ThreadPoolScheduler()
+scheduler = ThreadPoolScheduler(256)
 
 
 class _CaptureParameters(TypedDict):
@@ -74,7 +74,12 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         event.set()
         # Cancel future tasks
         process_executor.shutdown(wait=False, cancel_futures=True)
-        await gather(*tasks)
+        try:
+            await wait_for(gather(*tasks), 10)
+        except TimeoutError:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
         logger.info("All analysis processes terminated.")
         # Run all on_termination callbacks defined by the analyses
         callbacks = [callback for analysis in analyses.values() if (callback := analysis.on_termination) is not None]
