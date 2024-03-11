@@ -4,17 +4,23 @@ This is done via HTTP communication with the adeck VMS.
 """
 from httpx import AsyncClient
 
-from analysis.types_adeck import parse_all
+from analysis.types_adeck import parse_all, settings
 from analysis.types_adeck.camera import Camera
 from user_secrets import CAMERA_URL, C
 
 client = AsyncClient(verify=C, timeout=5)
+EXCLUDES = settings.load(settings.DEFAULT_PATH).excludes
 
 
 async def get_cameras():
     """Get all cameras from the adeck VMS."""
     result = await client.get(CAMERA_URL)
-    return parse_all(Camera, result.json()["result"])
+    cameras = parse_all(Camera, result.json()["result"])
+    return [*filter(_is_not_excluded, cameras)]
+
+
+def _is_not_excluded(camera: Camera):
+    return camera.uuid not in EXCLUDES
 
 
 def get_rtsp_url(camera: Camera):

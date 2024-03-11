@@ -1,6 +1,8 @@
 # Configuration file for user constants
 # These values will alter the bevhaviour of the prototype
-excludes = ["f98c6c50-b944-47ed-a11c-183fb0421cbe"]
+
+# Ignore special prototype camera
+excludes = ["20110901-0001-0001-0001-70b3d5f8a398"]
 
 [shelf_monitoring]
 # Warp 2
