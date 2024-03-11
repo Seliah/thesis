@@ -4,12 +4,13 @@ This is done via HTTP communication with the adeck VMS.
 """
 from httpx import AsyncClient
 
+from analysis.definitions import PATH_SETTINGS
 from analysis.types_adeck import parse_all, settings
 from analysis.types_adeck.camera import Camera
 from user_secrets import CAMERA_URL, C
 
 client = AsyncClient(verify=C, timeout=5)
-EXCLUDES = settings.load(settings.DEFAULT_PATH).excludes
+EXCLUDES = settings.load(PATH_SETTINGS).excludes
 
 
 async def get_cameras():

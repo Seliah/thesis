@@ -32,6 +32,7 @@ def has_new_gap(ossa_results: list[list[Results] | None]):
     # Check if any of the boxes is a new gap
     return any(_is_new_gap(index, overlaps) for index, _bounds in enumerate(current_boxes_bounds))  # pyright: ignore[reportUnknownArgumentType]
 
+
 def _is_new_gap(index: int, all_overlaps: Iterable[Tensor]):
     occurences = 0
     for overlaps in all_overlaps:
@@ -50,5 +51,7 @@ def _is_new_gap(index: int, all_overlaps: Iterable[Tensor]):
         return True
     # Not enough previously overlapping gaps found, this one is probably a false positive
     if __debug__:
-        logger.debug(f"Not enough previously overlapping gaps found for gap at {index}. This one is probably a false positive.")
+        logger.debug(
+            f"Not enough previously overlapping gaps found for gap at {index}. This one is probably a false positive.",
+        )
     return False

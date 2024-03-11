@@ -8,7 +8,7 @@ import signal
 from asyncio import gather, get_event_loop, wait_for
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import Manager, Pipe
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import cv2
 from cv2 import (
@@ -17,6 +17,7 @@ from cv2 import (
 from cv2.typing import MatLike
 from reactivex import merge
 from reactivex import operators as ops
+from reactivex.scheduler import ThreadPoolScheduler
 from reactivex.subject import Subject
 
 from analysis import definitions, state
@@ -28,6 +29,7 @@ from analysis.vision.analyses import Analysis, analyses
 if TYPE_CHECKING:
     import threading
     from multiprocessing.connection import Connection
+    from threading import Event
 
 loop = get_event_loop()
 
@@ -35,6 +37,16 @@ loop = get_event_loop()
 subjects: set[Subject[Any]] = set()
 thread_executor = ThreadPoolExecutor(thread_name_prefix="ParseThread")
 process_executor = ProcessPoolExecutor(128)
+scheduler = ThreadPoolScheduler()
+
+
+class _CaptureParameters(TypedDict):
+    source: str
+    source_id: str
+    visualize: bool
+    event: Event
+    analyses: dict[str, Analysis[Any]]
+    input_connection: Connection
 
 
 async def analyze_sources(sources: dict[str, str], display: str | None = None):
@@ -76,15 +88,19 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
     This will start a analysis process and a result parsing thread using the module level executors.
     """
     output_connection, input_connection = Pipe()
+    params = _CaptureParameters(
+        source=source,
+        source_id=source_id,
+        visualize=visualize,
+        event=event,
+        analyses=analyses,
+        input_connection=input_connection,
+    )
     # Run capture in multiple processes in background (via asyncio task)
     capture_future = loop.run_in_executor(
         process_executor,
         _capture,
-        source,
-        visualize,
-        event,
-        analyses,
-        input_connection,
+        params,
     )
     # Run parsing in multiple threads in foreground
     parse_future = loop.run_in_executor(
@@ -110,49 +126,57 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
 
 
 def _capture(
-    source: str,
-    visualize: bool,
-    termination_event: threading.Event,
-    analyses: dict[str, Analysis[Any]],
-    conn: Connection,
+    params: _CaptureParameters,
 ):
     """Capture video feed for given source and run all given analyses on it.
 
     This will set up only one input to minimize the I/O usage for camera and this machine.
     Analysis results are all send over the given connection with an analysis identifier prefix to enable parsing.
     """
-    logger.debug(f'Starting video capture and analysis for source "{source}".')
+    logger.debug(f'Starting video capture and analysis for source "{params["source"]}".')
     if not definitions.IS_SERVICE:
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     frames = Subject[MatLike]()
     subjects.add(frames)
 
-    _get_merged_output(frames, analyses, visualize).subscribe(conn.send, on_error=logger.exception)
+    conn = params["input_connection"]
+    _get_merged_output(frames, params).subscribe(
+        conn.send,
+        on_error=logger.exception,
+        scheduler=scheduler,
+    )
 
-    capture = VideoCapture(source, cv2.CAP_FFMPEG)
-    logger.debug(f'Video capture initialized for source "{source}". Backend: {capture.getBackendName()}')
-    capture_stream = from_capture(capture, termination_event)
+    capture = VideoCapture(params["source"], cv2.CAP_FFMPEG)
+    logger.debug(f'Video capture initialized for source "{params["source"]}". Backend: {capture.getBackendName()}')
+    capture_stream = from_capture(capture, params["event"])
     capture_stream.subscribe(frames, logger.exception)
 
 
-def _get_merged_output(frames: Subject[MatLike], analyses: dict[str, Analysis[Any]], visualize: bool):
+def _get_merged_output(frames: Subject[MatLike], params: _CaptureParameters):
     """Create observalbe that combines all analyses.
 
     This uses the analysis observable that is defined for each analysis and RxPY merge.
     """
-    output_streams = [_get_output_stream(frames, analysis, name, visualize) for name, analysis in analyses.items()]
-    return merge(*output_streams)
+    output_streams = [_get_output_stream(frames, name, params) for name in analyses]
+    return merge(*(stream for stream in output_streams if stream is not None))
 
 
-def _get_output_stream(frames: Subject[MatLike], analysis: Analysis[Any], analysis_name: str, visualize: bool):
+def _get_output_stream(
+    frames: Subject[MatLike],
+    analysis_name: str,
+    params: _CaptureParameters,
+):
     """Get the analysis result observable defined by the analysis.
 
     This will also prefix the results with the analysis ID.
     """
-    return analysis.analyze(frames, visualize).pipe(
-        ops.map(lambda result: (analysis_name, result)),
-    )
+    results = params["analyses"][analysis_name].analyze(frames, params["source_id"], params["visualize"])
+    if results is not None:
+        return results.pipe(
+            ops.map(lambda result: (analysis_name, result)),
+        )
+    return None
 
 
 def _parse(output_connection: Connection, camera_id: str):

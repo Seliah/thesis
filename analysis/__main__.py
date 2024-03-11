@@ -91,7 +91,7 @@ def view(
             break
         if grid:
             image = draw_grid(image, GRID_SIZE)
-        show(cap, image)
+        show(image, cap)
 
 
 if __name__ == "__main__":

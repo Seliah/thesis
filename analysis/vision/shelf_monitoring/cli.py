@@ -15,25 +15,35 @@ from pathlib import Path
 from threading import Event
 from typing import Optional
 
-from cv2 import CAP_PROP_FPS, WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, rectangle, waitKey
+from cv2 import WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, rectangle, waitKey
 from cv2.typing import MatLike
-from reactivex import concat, repeat_value
+from reactivex import Observable, concat, repeat_value
 from reactivex import operators as ops
 from rich.console import Console
 from typer import Argument, Option, Typer
 from typing_extensions import Annotated
 
 from analysis.app_logging import logger
+from analysis.definitions import PATH_SETTINGS
 from analysis.types_adeck import settings
 from analysis.util.image import show, warp
 from analysis.util.rx import from_capture
 from analysis.vision.shelf_monitoring.models import Model, models
+from analysis.vision.shelf_monitoring.removal import has_new_gap
 
 console = Console()
 shelf_app = Typer()
 yolo_app = Typer()
 
+monitoring_settings = settings.load(PATH_SETTINGS).shelf_monitoring
+
 N = 10
+MEMORY_TIME = 20
+"""How long to memorize gaps."""
+TIME_PER_FRAME = 1
+"""How long to wait between analyses."""
+MEMORIZED_FRAME_COUNT = int(MEMORY_TIME / TIME_PER_FRAME)
+
 
 class _AnalysisError(Exception):
     """Error to raise when a problem happened during analysis of an image."""
@@ -57,10 +67,6 @@ def image(
     labels: Annotated[bool, Option(help="Whether to show class names or not.")] = False,
     conf: Annotated[float, Option(help="Whether to show class names or not.")] = 0.25,
     crop_like: Annotated[Optional[str], Option(help="Crop the image like the configuration of the given ID.")] = None,
-    settings_path: Annotated[
-        Path,
-        Option(help="Path to the analysis settings file - needed when crop_like is given."),
-    ] = settings.DEFAULT_PATH,
 ):
     """Analyze a given image."""
     from ultralytics import YOLO
@@ -71,7 +77,6 @@ def image(
     img = imread(str(path))
 
     if crop_like is not None:
-        monitoring_settings = settings.load(settings_path).shelf_monitoring
         points = monitoring_settings.get(crop_like, None)
         if points is None:
             logger.error(f'No points configuration found for "{crop_like}"')
@@ -144,61 +149,67 @@ def diff(
 @shelf_app.command(name="stream")
 def shelf_stream(
     source: Annotated[str, Argument(help="Video source URL for input stream.")],
-    memory_time: Annotated[float, Option(help="How long to memorize gaps.")] = 20,
-    time_per_frame: Annotated[float, Option(help="How long to wait between analyses.")] = 1,
-    crop_like: Annotated[Optional[str], Option(help="Crop the image like the configuration of the given ID.")] = None,
-    settings_path: Annotated[
-        Path,
-        Option(help="Path to the analysis settings file - needed when crop_like is given."),
-    ] = settings.DEFAULT_PATH,
+    crop_like: Annotated[
+        str,
+        Option(help="Crop the image like the configuration of the given ID (see settings file)."),
+    ],
 ):
     """Analyze a video stream with shelf monitoring."""
+    capture = VideoCapture(source)
+    logger.info("Starting")
+    logger.info(f"Memorizing {MEMORIZED_FRAME_COUNT} frames.")
+    results = analyze_shelf(from_capture(capture, Event()), crop_like, visualize=True)
+    if results is not None:
+        results.subscribe(lambda result: parse_shelf_result(result, crop_like), logger.exception)
+
+
+def analyze_shelf(
+    frames: Observable[MatLike],
+    source_id: str,
+    visualize: bool,
+):
+    """Analyze frames from given observable with shelf monitoring."""
+    # Get warping bound points for this stream, if configured
+    points = monitoring_settings.get(source_id, None)
+    if points is None:
+        return None
+    logger.error(f'Starting shelf monitoring for "{source_id}"')
+
     from ultralytics import YOLO
 
     from analysis.util.yolov8 import plot, predict
-    from analysis.vision.shelf_monitoring.removal import has_new_gap
 
-    memorized_frame_count = int(memory_time / time_per_frame)
-
-    cap = VideoCapture(source)
-    fps = round(cap.get(CAP_PROP_FPS))
-    logger.info(f"FPS: ~{fps}")
+    # Prevent debug output from predictions
+    getLogger("ultralytics").setLevel(WARN)
 
     model = YOLO(models[Model.sku_gap]["path"])
 
-    # Get warping bound points for this stream, if configured
-    if crop_like is not None:
-        monitoring_settings = settings.load(settings_path).shelf_monitoring
-        points = monitoring_settings.get(crop_like, None)
-        if points is None:
-            logger.error(f'No points configuration found for "{crop_like}"')
-            return
-    else:
-        points = None
-
-    def analyze_shelf(image: MatLike):
+    def analyze_frame(image: MatLike):
         if points is not None:
             image = warp(image, points)
         results = predict(model, image, classes=[1])
-        show(cap, plot(results[0], labels=True, line_width=1), int(fps / 4))
+        if visualize:
+            show(plot(results[0], labels=True, line_width=1), fps=7)
         return results
 
-    logger.info("Starting")
-    logger.info(f"Memorizing {memorized_frame_count} frames.")
-    # Prevent debug output from predictions
-    getLogger("ultralytics").setLevel(WARN)
-    # Get analysis results for every n-th frame
-    results = from_capture(cap, Event()).pipe(
+    result_stream = frames.pipe(
+        # Get analysis results for every n-th frame
         ops.buffer_with_count(N),
         # Return only the last frame
         ops.map(lambda images: images[-1]),
-        ops.map(analyze_shelf),
+        ops.map(analyze_frame),
     )
-    concat(repeat_value(None, memorized_frame_count), results).pipe(
+    return concat(repeat_value(None, MEMORIZED_FRAME_COUNT), result_stream).pipe(
         # Emit all previous results as well
-        ops.buffer_with_count(memorized_frame_count - 1, 1),
+        ops.buffer_with_count(MEMORIZED_FRAME_COUNT - 1, 1),
         ops.map(has_new_gap),
-    ).subscribe(lambda has_new: logger.info("Neue Entnahme") if has_new else None, logger.exception)
+    )
+
+
+def parse_shelf_result(has_new: bool, source_id: str):
+    """Print status message for given shelf analysis result."""
+    if has_new:
+        logger.info(f"{source_id} - Neue Entnahme")
 
 
 if __name__ == "__main__":
