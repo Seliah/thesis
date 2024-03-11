@@ -121,8 +121,7 @@ def _capture(
 
     _get_merged_output(frames, analyses, visualize).subscribe(conn.send, on_error=logger.exception)
 
-    capture = VideoCapture()
-    capture.open(source)
+    capture = VideoCapture(source, cv2.CAP_FFMPEG)
     logger.debug(f'Video capture initialized for source "{source}". Backend: {capture.getBackendName()}')
     capture_stream = from_capture(capture, termination_event)
     capture_stream.subscribe(frames, logger.exception)
