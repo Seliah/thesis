@@ -10,9 +10,7 @@ from reactivex import operators as ops
 from analysis.app_logging import logger
 from analysis.definitions import PATH_SETTINGS
 from analysis.types_adeck import settings
-from analysis.util.image import show, warp
 from analysis.vision.shelf_monitoring.models import Model, models
-from analysis.vision.shelf_monitoring.removal import has_new_gap
 
 monitoring_settings = settings.load(PATH_SETTINGS).shelf_monitoring
 
@@ -38,7 +36,9 @@ def analyze_shelf(
 
     from ultralytics import YOLO
 
+    from analysis.util.image import show, warp
     from analysis.util.yolov8 import plot, predict
+    from analysis.vision.shelf_monitoring.removal import has_new_gap
 
     # Prevent debug output from predictions
     getLogger("ultralytics").setLevel(WARN)
