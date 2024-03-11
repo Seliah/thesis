@@ -10,6 +10,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from multiprocessing import Manager, Pipe
 from typing import TYPE_CHECKING, Any
 
+import cv2
 from cv2 import (
     VideoCapture,
 )
@@ -33,7 +34,7 @@ loop = get_event_loop()
 
 subjects: set[Subject[Any]] = set()
 thread_executor = ThreadPoolExecutor(thread_name_prefix="ParseThread")
-process_executor = ProcessPoolExecutor(16)
+process_executor = ProcessPoolExecutor(128)
 
 
 async def analyze_sources(sources: dict[str, str], display: str | None = None):
@@ -85,19 +86,27 @@ async def _analyze_source(source: str, source_id: str, visualize: bool, event: t
         analyses,
         input_connection,
     )
-    create_task(
-        wait_for(capture_future, timeout=None),
-        f'Capture and analysis task for source "{source}"',
-        logger,
-        print_exceptions=True,
-    )
     # Run parsing in multiple threads in foreground
-    await loop.run_in_executor(
+    parse_future = loop.run_in_executor(
         thread_executor,
         _parse,
         output_connection,
         source_id,
     )
+    capture_task = create_task(
+        wait_for(capture_future, timeout=None),
+        f'Capture and analysis task for source "{source}"',
+        logger,
+        print_exceptions=True,
+    )
+    parse_task = create_task(
+        wait_for(parse_future, timeout=None),
+        f'Capture and analysis task for source "{source}"',
+        logger,
+        print_exceptions=True,
+    )
+    await capture_task
+    await parse_task
 
 
 def _capture(
