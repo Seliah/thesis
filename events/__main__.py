@@ -4,6 +4,7 @@
 
 from analysis.app_logging import logger  # noqa: I001
 
+from asyncio import gather
 from pathlib import Path
 from typing import Annotated, Any, Dict, cast
 
@@ -12,9 +13,9 @@ import typer
 from httpx import AsyncClient
 from lxml import etree
 from rich.console import Console
+
 from analysis.camera_info import get_cameras
 from analysis.types_adeck.camera import Camera
-
 from analysis.util.tasks import create_task, typer_async
 from events.pull_point import pull_point_messages
 from events.reactions import handle_message, print_message
@@ -109,14 +110,13 @@ async def listen_all(
     """Listen for ONVIF events for every camera and run defined reactions."""
     cameras = [(camera, await _get_camera(camera.address, port)) for camera in await get_cameras()]
     tasks = [_get_task(camera_info, onvif_camera) for (camera_info, onvif_camera) in cameras]
-    for task in tasks:
-        await task
+    await gather(*tasks)
 
 
 def _get_task(camera_info: Camera, onvif_camera: onvif.ONVIFCamera):
     return create_task(
         _handle_messages(camera_info, onvif_camera),
-        f"Event handling for camera {camera_info}",
+        f'Event handling for "{camera_info}"',
         logger,
         print_exceptions=True,
     )
