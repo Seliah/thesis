@@ -16,6 +16,7 @@ from user_secrets import DATABASE_PATH
 
 IS_SERVICE = os.getenv("RUN_AS_SERVICE", None) == "True"
 """Flag that state whether this program is run as a systemd service unit."""
+API_ONLY = os.getenv("API_ONLY", None) == "True"
 
 TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 """Timezone that the program runs in."""
