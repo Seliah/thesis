@@ -6,7 +6,7 @@ It is intended to run this as a systemd service unit. It is optimized for runnin
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Annotated, Tuple, cast
+from typing import TYPE_CHECKING, Annotated, List, Set, Tuple, cast
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,7 +68,9 @@ app.add_middleware(
 
 
 @app.get("/heatmap")
-def get_heatmap(camera_id: Annotated[str, Query(description="Identifier of the camera/source in question.")]):
+def get_heatmap(
+    camera_id: Annotated[str, Query(description="Identifier of the camera/source in question.")],
+) -> List[int] | None:  # noqa: UP006
     """Return a list with number for motion occurrences in every segment."""
     return calculate_heatmap(camera_id)
 
@@ -80,8 +82,8 @@ def get_motions_from_percent(  # noqa: PLR0913 we need more params that for API
     top: Annotated[float, Query(description="Top bound for selection rectangle in percent of total height.")],
     width: Annotated[float, Query(description="Width for selection rectangle in percent of total width")],
     height: Annotated[float, Query(description="Height for selection rectangle in percent of total height.")],
-    span_size: Annotated[int, Query(description=SPAN_SIZE_DOC)],
-):
+    span_size: Annotated[int, Query(description=SPAN_SIZE_DOC)] = 1,
+) -> Set[int]:  # noqa: UP006
     """Get motion frames for given image section (in percent)."""
     y = int(top * definitions.GRID_SIZE[0])
     height = int(height * definitions.GRID_SIZE[0]) + 1
