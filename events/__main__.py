@@ -110,7 +110,7 @@ async def listen_all(
     """Listen for ONVIF events for every camera and run defined reactions."""
     cameras = [(camera, await _get_camera(camera.address, port)) for camera in await get_cameras()]
     tasks = [_get_task(camera_info, onvif_camera) for (camera_info, onvif_camera) in cameras]
-    await gather(*tasks)
+    await gather(*tasks, return_exceptions=True)
 
 
 def _get_task(camera_info: Camera, onvif_camera: onvif.ONVIFCamera):

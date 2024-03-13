@@ -75,7 +75,7 @@ async def analyze_sources(sources: dict[str, str], display: str | None = None):
         # Cancel future tasks
         process_executor.shutdown(wait=False, cancel_futures=True)
         try:
-            await wait_for(gather(*tasks), 10)
+            await wait_for(gather(*tasks, return_exceptions=True), 10)
         except TimeoutError:
             for task in tasks:
                 if not task.done():
