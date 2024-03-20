@@ -82,6 +82,7 @@ def print_message(message: Message):
         logger.debug(f'Message on topic "{topic}"')
         if str(topic) in handlers:
             # logger.debug(f"Message: {message}")  # noqa: ERA001
+            # logger.debug(f'Message data: {message["Message"]["_value_1"]}') # noqa: ERA001
             logger.debug(f'Message data: {message["Message"]["_value_1"]["Data"]}')
 
 

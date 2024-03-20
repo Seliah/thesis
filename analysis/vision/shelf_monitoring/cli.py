@@ -12,9 +12,9 @@ The prdictions may be improved further by tweaking args like conf, iou or agnost
 # ruff: noqa: FA100
 from pathlib import Path
 from threading import Event
-from typing import Optional
+from typing import List, Optional
 
-from cv2 import WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, rectangle, waitKey
+from cv2 import WINDOW_NORMAL, VideoCapture, imread, imshow, namedWindow, waitKey
 from rich.console import Console
 from typer import Argument, Option, Typer
 from typing_extensions import Annotated
@@ -34,10 +34,6 @@ yolo_app = Typer()
 monitoring_settings = settings.load(PATH_SETTINGS).shelf_monitoring
 
 
-class _AnalysisError(Exception):
-    """Error to raise when a problem happened during analysis of an image."""
-
-
 @yolo_app.command()
 def info(model_id: Annotated[Model, Argument(help="Which model to use for analysis.")]):
     """Print out heatmap data for a given camera."""
@@ -50,11 +46,12 @@ def info(model_id: Annotated[Model, Argument(help="Which model to use for analys
 
 
 @yolo_app.command()
-def image(
+def image(  # noqa: PLR0913 we need complex parameters for cli execution
     model_id: Annotated[Model, Argument(help="Which model to use for analysis.")],
     path: Annotated[Path, Argument(help="The path of the to be analyzed image.")],
     labels: Annotated[bool, Option(help="Whether to show class names or not.")] = False,
     conf: Annotated[float, Option(help="Whether to show class names or not.")] = 0.25,
+    classes: Annotated[Optional[List[int]], Option(help="The classes to look for.")] = None,
     crop_like: Annotated[Optional[str], Option(help="Crop the image like the configuration of the given ID.")] = None,
 ):
     """Analyze a given image."""
@@ -72,7 +69,7 @@ def image(
             return
         img = warp(img, points)
 
-    results = predict(model, img, conf=conf)
+    results = predict(model, img, stream=False, classes=classes, conf=conf)
     namedWindow("Results", WINDOW_NORMAL)
     for result in results:
         imshow("Results", plot(result, labels=labels, line_width=2))
@@ -95,44 +92,6 @@ def stream(
     for result in predict(model, source, stream=True):
         imshow("Results", plot(result, labels=labels, line_width=2))
         waitKey(1)
-
-
-@shelf_app.command()
-def diff(
-    path_img1: Annotated[Path, Argument(help="The path of the older image.")],
-    path_img2: Annotated[Path, Argument(help="The path of the newer image.")],
-    overlap_threshold: Annotated[float, Option(help="How big the detection box overlap must be (0-1).")] = 0.1,
-):
-    """Analyze two images with shelf monitoring.
-
-    This will detect missing items in img2 that were present in img1.
-    """
-    from ultralytics import YOLO
-
-    from analysis.util.yolov8 import compare_results, get_rect_from_box, predict
-
-    model_sku = YOLO(models[Model.sku]["path"])
-    model_ossa = YOLO(models[Model.ossa]["path"])
-
-    result_sku = predict(model_sku, path_img1)[0]
-    sku_boxes = result_sku.boxes
-    if sku_boxes is None:
-        raise _AnalysisError("Analysis for products failed.")
-
-    result_ossa = predict(model_ossa, path_img2)[0]
-    ossa_boxes = result_ossa.boxes
-    if ossa_boxes is None:
-        raise _AnalysisError("Analysis for gaps failed.")
-
-    overlapping = compare_results(ossa_boxes, sku_boxes)
-    for gap_index, item_index in overlapping.nonzero():
-        overlap = overlapping[gap_index, item_index]
-        if overlap > overlap_threshold:
-            box = sku_boxes.xyxy[item_index]  # pyright: ignore[reportUnknownMemberType]
-            rectangle(result_ossa.orig_img, get_rect_from_box(box), (0, 255, 0), 2)
-
-    imshow("Results", result_ossa.orig_img)
-    waitKey(0)
 
 
 @shelf_app.command(name="stream")

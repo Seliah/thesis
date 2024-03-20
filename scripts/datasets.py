@@ -20,8 +20,6 @@ FORMAT = "yolov8"
 class DatasetID(str, Enum):
     """Names of known datasets."""
 
-    ossa = "ossa"
-    sku = "sku110k"
     sku_gaps = "sku_gaps"
 
 
@@ -32,16 +30,6 @@ class _DatasetInfo(TypedDict):
 
 
 datasets: dict[DatasetID, _DatasetInfo] = {
-    DatasetID.ossa: {
-        "workspace": "fyp-ormnr",
-        "project": "on-shelf-stock-availability-ox04t",
-        "version": 5,
-    },
-    DatasetID.sku: {
-        "workspace": "jacobs-workspace",
-        "project": "sku-110k",
-        "version": 4,
-    },
     DatasetID.sku_gaps: {
         "workspace": "final-project-object-detection-for-instore-inventory-management",
         "project": "empty-spaces-in-a-supermarket-hanger-1upsp",
