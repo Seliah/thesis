@@ -28,15 +28,15 @@ from analysis.vision.shelf_monitoring.gaps import analyze_shelf, parse_shelf_res
 from analysis.vision.shelf_monitoring.models import Model, models
 
 console = Console()
-shelf_app = Typer()
-yolo_app = Typer()
+shelf_app = Typer(help="Run shelf monitoring.")
+yolo_app = Typer(help="Use YOLOv8 with different models on images or videos for testing.")
 
 monitoring_settings = settings.load(PATH_SETTINGS).shelf_monitoring
 
 
 @yolo_app.command()
 def info(model_id: Annotated[Model, Argument(help="Which model to use for analysis.")]):
-    """Print out heatmap data for a given camera."""
+    """Print out information about a given model."""
     from ultralytics import YOLO
 
     model = YOLO(models[model_id]["path"])
@@ -102,7 +102,7 @@ def shelf_stream(
         Option(help="Crop the image like the configuration of the given ID (see settings file)."),
     ],
 ):
-    """Analyze a video stream with shelf monitoring."""
+    """Analyze a video stream."""
     capture = VideoCapture(source)
     logger.info("Starting")
     results = analyze_shelf(from_capture(capture, Event()), crop_like, visualize=True)

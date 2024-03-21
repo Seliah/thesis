@@ -21,7 +21,9 @@ from events.pull_point import pull_point_messages
 from events.reactions import handle_message, print_message
 from user_secrets import PASS, USER
 
-app = typer.Typer()
+app = typer.Typer(
+    help="Event listener program. This can be used to integrate external Systems via ONVIF event messages."
+)
 console = Console()
 client = AsyncClient(timeout=5)
 

@@ -20,7 +20,7 @@ app = typer.Typer(help="Read saved analysis data.")
 
 
 @app.command()
-def motions(
+def read(
     source: Annotated[Optional[str], typer.Argument(help="Identifier of the to be read camera.")] = None,
 ):
     """Print out timestamps with motion for the given camera."""

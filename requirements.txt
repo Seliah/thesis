@@ -32,7 +32,7 @@ fastapi
 ## Usage
 # ASGI server for production
 uvicorn[standard]
-# CLI for debug usage
+# CLIs for debug usage
 typer[all]
 
 ## Dev Tools
