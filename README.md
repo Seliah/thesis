@@ -77,3 +77,46 @@ pip install --no-index --no-build-isolation --find-links /tmp/requirements/ -r r
 ```
 
 See <https://stackoverflow.com/questions/11091623/how-to-install-packages-offline> for comparable forum thread.
+
+## Usage
+
+This project defines two programs, `events` and `analysis`. They both have a detailed CLI, implemented with [Typer](https://typer.tiangolo.com). The CLI can be used to start the programs or read about its features and parameters. This also applies to various Python-Scripts in the `scripts` directory.
+
+The programs can be run like this:
+
+```bash
+# Show help info for the analysis program
+PYTHONPATH="." python analysis --help
+# Show help info for the events program
+PYTHONPATH="." python events --help
+# Show help info for the dataset download script
+PYTHONPATH="." python scripts/datasets.py --help
+# Show help info for the training script
+PYTHONPATH="." python scripts/train.py --help
+```
+
+The CLIs have submodules and commands, that are all documented with the help info. For example, the following command can be run to get to know more about the "motion-data" submodule:
+
+```bash
+PYTHONPATH="." python analysis motion-data --help
+```
+
+The next command could be used to get to know more about the "yolo image" command and all its parameters:
+
+```bash
+PYTHONPATH="." python analysis yolo image --help
+```
+
+Everything should be run from the project root directory. The project root should also be the PYTHONPATH, that is why `PYTHONPATH="."` is set.
+
+This also means that bash scripts should be run like this:
+
+```bash
+bash scripts/count.bash
+```
+
+## Author
+
+As stated in the introduction, this project is part of Elias Zielke's master's thesis. For contact information, please check out <https://elias-zielke.net>.
+
+Thank you for your interest!
