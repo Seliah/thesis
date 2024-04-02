@@ -36,7 +36,7 @@ loop = get_event_loop()
 
 subjects: set[Subject[Any]] = set()
 thread_executor = ThreadPoolExecutor(256, "ParseThread")
-process_executor = ProcessPoolExecutor(128)
+process_executor = ProcessPoolExecutor(60)
 scheduler = ThreadPoolScheduler(256)
 
 
