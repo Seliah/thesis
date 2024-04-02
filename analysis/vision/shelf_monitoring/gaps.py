@@ -14,12 +14,16 @@ from analysis.vision.shelf_monitoring.models import Model, models
 
 monitoring_settings = settings.load(PATH_SETTINGS).shelf_monitoring
 
-N = 10
-MEMORY_TIME = 20
+FPS = 25
+"""The FPS of the input video. This is static for the used IP cameras but could also be parsed from the input stream."""
+MEMORY_TIME = 60
 """How long to memorize gaps."""
 TIME_PER_FRAME = 1
 """How long to wait between analyses."""
+N = int(FPS * TIME_PER_FRAME)
+"""How many frames to skip + 1."""
 MEMORIZED_FRAME_COUNT = int(MEMORY_TIME / TIME_PER_FRAME)
+"""How many frames/analysis results to save."""
 
 
 def analyze_shelf(
