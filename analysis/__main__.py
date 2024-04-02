@@ -26,8 +26,8 @@ from user_secrets import URL
 
 console = Console()
 
-app = typer.Typer()
-app.add_typer(motion_cli.app, name="motion")
+app = typer.Typer(help="Adeck systems analysis program. This program gathers all image/video analysis functionality.")
+app.add_typer(motion_cli.app, name="motion-data")
 app.add_typer(shelf_cli.yolo_app, name="yolo")
 app.add_typer(shelf_cli.shelf_app, name="shelf")
 
@@ -48,7 +48,10 @@ async def _exit_on_input():
 async def analyze_all(
     display: Annotated[Optional[str], typer.Argument(help="ID of a camera that is to be visualized.")] = None,
 ):
-    """Analyze the streams of all cameras in the local video system by Adeck Systems."""
+    """Analyze the streams of all cameras in the local video system by Adeck Systems.
+
+    All defined analyses will be used.
+    """
     state.motions = load_motions()
     sources = await get_sources()
     task = create_task(analyze_sources(sources, display), "Analysis main task", logger, print_exceptions=True)
@@ -61,7 +64,10 @@ async def analyze_all(
 async def analyze(
     source: Annotated[Optional[str], typer.Argument(help="Video source. Can be a RTSP URL.")] = None,
 ):
-    """Analyze the given stream, saving it with the source as an id."""
+    """Analyze the given stream, saving results with the source as an id.
+
+    All defined analyses will be used.
+    """
     state.motions = load_motions()
     if source is None:
         source = URL
@@ -91,7 +97,7 @@ def view(
             break
         if grid:
             image = draw_grid(image, GRID_SIZE)
-        show(cap, image)
+        show(image, cap)
 
 
 if __name__ == "__main__":

@@ -25,11 +25,10 @@ def from_capture(capture: cv2.VideoCapture, termination_event: Event) -> Observa
     def on_subscribe(observer: ObserverBase[MatLike], _: SchedulerBase | None):
         disposed = Event()
         while capture.isOpened() and not termination_event.is_set() and not disposed.is_set():
-            success = capture.grab()
+            success, frame = capture.read()
             if not success:
                 logger.error("Observable OpenCV Capture was not successful.")
                 break
-            _success, frame = capture.retrieve()
             observer.on_next(frame)
         capture.release()
         observer.on_completed()

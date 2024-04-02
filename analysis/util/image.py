@@ -102,10 +102,10 @@ def _get_max_size(points: RectPoints):
     return width_max, height_max
 
 
-def show(cap: cv2.VideoCapture, image: MatLike, fps: int = 1000):
+def show(image: MatLike, cap: cv2.VideoCapture | None = None, fps: int = 1000):
     """Just show an image."""
     cv2.imshow("Video", image)
     wait_ms = (1 / fps) * 1000
-    if cv2.waitKey(int(wait_ms)) & 0xFF == ord("q"):
+    if cv2.waitKey(int(wait_ms)) & 0xFF == ord("q") and cap is not None:
         # if cv2.waitKey(1) & 0xFF:
         cap.release()

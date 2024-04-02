@@ -15,6 +15,10 @@ ultralytics
 # Datasets for deep learning algorithms
 roboflow
 
+## Events
+# ONVIF implementation
+onvif_zeep_async
+
 ## Integration
 # HTTP Requests framework for higher level and typed API calls
 httpx
@@ -28,7 +32,7 @@ fastapi
 ## Usage
 # ASGI server for production
 uvicorn[standard]
-# CLI for debug usage
+# CLIs for debug usage
 typer[all]
 
 ## Dev Tools

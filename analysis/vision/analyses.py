@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
 from analysis.vision.motion_search.motion import analyze_motion, update_global_matrix, write_motion
+from analysis.vision.shelf_monitoring.gaps import analyze_shelf, parse_shelf_result
 
 if TYPE_CHECKING:
     from cv2.typing import MatLike
     from reactivex import Observable
-    from reactivex.subject import Subject
 
 T = TypeVar("T")
 
@@ -24,7 +24,7 @@ class Analysis(Generic[T]):
     That definition formulates how video feeds should be analyzed with callbacks.
     """
 
-    analyze: Callable[[Subject[MatLike], bool], Observable[T]]
+    analyze: Callable[[Observable[MatLike], str, bool], Observable[T] | None]
     """Analyze the given frame observable in some way.
 
     This logic will be run in a child process.
@@ -38,4 +38,9 @@ class Analysis(Generic[T]):
 
 analyses = {
     "motion_search": Analysis(analyze_motion, update_global_matrix, write_motion),
+    "shelf_monitoring": Analysis(analyze_shelf, parse_shelf_result),
 }
+"""Dictionary for the definition of to be done analyses.
+
+Every analysis here will be applied to each camera.
+"""

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Dict
 
 from scipy.sparse import lil_array
@@ -15,11 +16,14 @@ from user_secrets import DATABASE_PATH
 
 IS_SERVICE = os.getenv("RUN_AS_SERVICE", None) == "True"
 """Flag that state whether this program is run as a systemd service unit."""
+API_ONLY = os.getenv("API_ONLY", None) == "True"
 
 TIMEZONE = datetime.now(timezone.utc).astimezone().tzinfo
 """Timezone that the program runs in."""
 
 PATH_MOTIONS = DATABASE_PATH / "motions.npy"
+PATH_SETTINGS = Path("./settings.toml")
+"""Path to the analysis settings TOML file."""
 
 GRID_SIZE = (9, 16)
 """How many rows and columns should exist to define the cells."""
