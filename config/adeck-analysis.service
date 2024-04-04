@@ -6,8 +6,8 @@ PartOf=adeck-umbrella.service
 [Service]
 Environment=PYTHONPATH=/home/test/Code/adeck-analysis/
 Environment=RUN_AS_SERVICE=True
-# Use -OO (optimization) to remove development logic
-ExecStart=/usr/bin/python3 -OO /home/test/Code/adeck-analysis/analysis analyze-all
+# Make sure that the correct python binary is used when calling "python"!
+ExecStart=/bin/bash /home/test/Code/adeck-analysis/scripts/run_api.bash
 # Measure memory usage
 MemoryAccounting=true
 # Restart when the program somehow terminated (crash or succesful is irrelevant - this should always run)

@@ -115,6 +115,18 @@ This also means that bash scripts should be run like this:
 bash scripts/count.bash
 ```
 
+The following can be used to run the analysis service with API like it would be run in the service:
+
+```bash
+bash ./scripts/run_api.bash
+```
+
+## Documentation
+
+As stated in [Structure](#structure), files and folders are documented. In the Python-code, docstrings were used as inline documentation and describe public functions, classes, modules and more. This is also the base for a fully documented HTTP API, using [FastAPI](https://fastapi.tiangolo.com).
+
+After starting the application, for example with `./scripts/run_api_debug.bash` or `./scripts/run_api_only.bash` the following URL can be opened in the browser to see the automatically generated documentation: <http://127.0.0.1:8000/docs>
+
 ## Author
 
 As stated in the introduction, this project is part of Elias Zielke's master's thesis. For contact information, please check out <https://elias-zielke.net>.
