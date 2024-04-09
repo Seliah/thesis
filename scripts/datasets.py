@@ -34,7 +34,6 @@ datasets: dict[DatasetID, _DatasetInfo] = {
     # Source: Final Project Object detection for instore inventory management, “Empty spaces in a supermarket hanger Dataset,” Roboflow Universe. Roboflow, Aug. 2023. Available: https://universe.roboflow.com/final-project-object-detection-for-instore-inventory-management/empty-spaces-in-a-supermarket-hanger-1upsp. [Accessed: Apr. 09, 2024]
     # Based on SKU110k, based in the following paper: E. Goldman et al., “Precise Detection in Densely Packed Scenes.” arXiv, Apr. 30, 2019. Available: http://arxiv.org/abs/1904.00853. [Accessed: Jan. 17, 2024]
     # Hosted on Roboflow: B. Dwyer, J. Nelson, T. Hansen, and et. al., “Roboflow (Version 1.0) [Software].” 2024. Available: https://roboflow.com. [Accessed: Apr. 09, 2024]
-
     DatasetID.sku_gaps: {
         "workspace": "final-project-object-detection-for-instore-inventory-management",
         "project": "empty-spaces-in-a-supermarket-hanger-1upsp",
