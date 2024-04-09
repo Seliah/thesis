@@ -1,0 +1,28 @@
+<div class="timeline">
+  <!-- Camera motion event frames -->
+  <div class="timeframes">
+    <div *ngIf="showLine" id="line"></div>
+    <div
+      *ngFor="let frame of frames"
+      [ngStyle]="{
+                'margin-right': [frame.end] | percentage : 'position' : start : end : true,
+                width: [frame.start, frame.end] | percentage : 'width' : start : end : true
+            }"
+      class="timeframe bg-border-light-color"></div>
+  </div>
+  <!-- Motion search spans -->
+  <div class="timeframes">
+    <div *ngIf="showLine" id="line"></div>
+    <div
+      *ngFor="let frame of searchFrames$ | async"
+      [ngStyle]="{
+            'margin-right': [frame[1]] | percentage : 'position' : MOTION_SEARCH_START : (MOTION_SEARCH_END | async) : true,
+            width: [frame[0], frame[1]] | percentage : 'width' : MOTION_SEARCH_START : (MOTION_SEARCH_END | async) : true
+        }"
+      class="timeframe bg-accent-strong"></div>
+  </div>
+  <!-- Camera name label -->
+  <span *ngIf="showName && !!cameraName" class="camera-label">
+    <mat-icon inline="true">videocam</mat-icon> {{ cameraName }}
+  </span>
+</div>

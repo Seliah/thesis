@@ -1,0 +1,38 @@
+.timeline {
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+.camera-label {
+  bottom: 0;
+
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0.5em;
+
+  position: absolute;
+}
+
+.timeframes {
+  align-items: center;
+  direction: rtl;
+  display: flex;
+  height: inherit;
+
+  position: absolute;
+  width: inherit;
+}
+
+.timeframe {
+  height: 7px;
+
+  pointer-events: none;
+  position: absolute;
+}
+
+#line {
+  background-color: #f3f3f3;
+  height: 1px;
+  width: 100%;
+}
