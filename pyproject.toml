@@ -49,4 +49,4 @@ ignore = [
   "FBT002",
 ]
 line-length = 120
-target-version = "py38"
+target-version = "py311"

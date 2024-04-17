@@ -80,7 +80,7 @@ See <https://stackoverflow.com/questions/11091623/how-to-install-packages-offlin
 
 ## Usage
 
-This project defines two programs, `events` and `analysis`. They both have a detailed CLI, implemented with [Typer](https://typer.tiangolo.com). The CLI can be used to start the programs or read about its features and parameters. This also applies to various Python-Scripts in the `scripts` directory.
+This project defines two programs, `events` and `analysis`. They both have a detailed CLI, implemented with [Typer](https://typer.tiangolo.com). The CLI can be used to start the programs or read about its features and parameters. This also applies to various Python-Scripts in the `scripts` directory. Python 11 was used for development and testing.
 
 The programs can be run like this:
 

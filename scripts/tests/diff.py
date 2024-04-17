@@ -1,4 +1,4 @@
-"""Module for trying out the concept for moition detection."""
+"""Module for trying out the concept for motion detection."""
 from __future__ import annotations
 
 from threading import Event
